@@ -1,0 +1,52 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum QuestionType {
+  mul_choice
+  fill_blank
+  identification
+}
+
+model Module {
+  module_id Int    @id @default(autoincrement())
+  name      String @db.VarChar(100)
+
+  // back-rel
+  questions Question[] @relation("ModuleQuestions")
+
+  @@map("modules")
+}
+
+model Question {
+  question_id Int          @id @default(autoincrement())
+  module_id   Int
+  type        QuestionType
+  text        String       @db.Text
+
+  // FK -> modules.module_id
+  module Module @relation(name: "ModuleQuestions", fields: [module_id], references: [module_id], onDelete: Cascade)
+
+  // back-rel
+  answers Answer[] @relation("QuestionAnswers")
+
+  @@map("questions")
+}
+
+model Answer {
+  answer_id   Int     @id @default(autoincrement())
+  question_id Int
+  text        String  @db.VarChar(255)
+  is_correct  Boolean @default(false)
+
+  // FK -> questions.question_id
+  question Question @relation(name: "QuestionAnswers", fields: [question_id], references: [question_id], onDelete: Cascade)
+
+  @@map("answers")
+}
