@@ -1,19 +1,44 @@
-import { NextResponse } from 'next/server'
-import prisma from '@lib/prisma';
+import { NextRequest, NextResponse } from 'next/server'
+import prisma from '@lib/prisma'
+import type { Answer } from '@prisma/client'
 
-export async function GET() {
-  const items = await prisma.answer.findMany({ orderBy: { answer_id: 'asc' } })
-  return NextResponse.json(items)
+type AnswerUpdate = Partial<Pick<Answer, 'text' | 'is_correct'>>
+
+export async function GET(
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params
+  const a = await prisma.answer.findUnique({ where: { answer_id: Number(id) } })
+  return NextResponse.json(a)
 }
 
-export async function POST(req: Request) {
-  const b = await req.json().catch(() => ({}))
-  const { question_id, text, is_correct } = b || {}
-  if (!question_id || !text) {
-    return NextResponse.json({ error: 'question_id and text required' }, { status: 400 })
+export async function PUT(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params
+  const raw = (await req.json().catch(() => ({}))) as unknown
+
+  const data: AnswerUpdate = {}
+  if (typeof raw === 'object' && raw !== null) {
+    const r = raw as Record<string, unknown>
+    if (typeof r.text === 'string') data.text = r.text
+    if (typeof r.is_correct === 'boolean') data.is_correct = r.is_correct
   }
-  const created = await prisma.answer.create({
-    data: { question_id, text, is_correct: Boolean(is_correct) },
+
+  const updated = await prisma.answer.update({
+    where: { answer_id: Number(id) },
+    data,
   })
-  return NextResponse.json(created, { status: 201 })
+  return NextResponse.json(updated)
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params
+  await prisma.answer.delete({ where: { answer_id: Number(id) } })
+  return NextResponse.json({ ok: true })
 }
