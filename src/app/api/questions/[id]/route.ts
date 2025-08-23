@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import type { Question } from '@prisma/client'
-import { QuestionType } from '@prisma/client'
 
 type QuestionUpdate = Partial<Pick<Question, 'module_id' | 'type' | 'text'>>
 
@@ -12,7 +11,7 @@ export async function GET(
   const { id } = await context.params
   const q = await prisma.question.findUnique({
     where: { question_id: Number(id) },
-    include: { module: true, answers: true },
+    include: { answers: true, module: true },
   })
   return NextResponse.json(q)
 }
@@ -22,16 +21,20 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params
-  const raw = (await req.json().catch(() => ({}))) as unknown
+
+  let raw: unknown
+  try {
+    raw = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
 
   const data: QuestionUpdate = {}
-  if (typeof raw === 'object' && raw !== null) {
+  if (raw && typeof raw === 'object') {
     const r = raw as Record<string, unknown>
-    if (typeof r.text === 'string') data.text = r.text
     if (typeof r.module_id === 'number') data.module_id = r.module_id
-    if (typeof r.type === 'string' && r.type in QuestionType) {
-      data.type = r.type as QuestionType
-    }
+    if (typeof r.type === 'string') data.type = r.type as Question['type']
+    if (typeof r.text === 'string') data.text = r.text
   }
 
   const updated = await prisma.question.update({
@@ -49,4 +52,3 @@ export async function DELETE(
   await prisma.question.delete({ where: { question_id: Number(id) } })
   return NextResponse.json({ ok: true })
 }
-

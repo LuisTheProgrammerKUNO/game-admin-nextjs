@@ -1,4 +1,3 @@
-// src/app/api/answers/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import type { Answer } from '@prisma/client'
