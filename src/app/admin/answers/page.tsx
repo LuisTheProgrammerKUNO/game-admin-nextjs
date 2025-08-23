@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Answer, Question } from '@prisma/client'
 
 export default function AnswersPage() {
-  // Read ?question_id=... from the URL on the client
   const params = useMemo(() => new URLSearchParams(window.location.search), [])
   const qidParam = Number(params.get('question_id') || 0)
 
@@ -12,17 +11,18 @@ export default function AnswersPage() {
   const [text, setText] = useState('')
   const [correct, setCorrect] = useState(false)
 
-  // Memoized loader so it can be safely referenced in useEffect and actions
   const load = useCallback(async () => {
-    if (!qidParam) return
-    const q = await fetch(`/api/questions/${qidParam}`).then((r) => r.json())
-    setQuestion(q)
-    setAnswers(q?.answers ?? [])
+    if (qidParam) {
+      const q: (Question & { answers: Answer[] }) | null =
+        await fetch(`/api/questions/${qidParam}`).then((r) => r.json())
+      if (q) {
+        setQuestion(q)
+        setAnswers(q.answers ?? [])
+      }
+    }
   }, [qidParam])
 
-  useEffect(() => {
-    load()
-  }, [load])
+  useEffect(() => { void load() }, [load])
 
   const add = async () => {
     if (!qidParam || !text.trim()) return
@@ -33,7 +33,7 @@ export default function AnswersPage() {
     })
     setText('')
     setCorrect(false)
-    await load()
+    void load()
   }
 
   const toggle = async (a: Answer) => {
@@ -42,19 +42,18 @@ export default function AnswersPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ is_correct: !a.is_correct }),
     })
-    await load()
+    void load()
   }
 
   const remove = async (id: number) => {
     if (!confirm('Delete answer?')) return
     await fetch(`/api/answers/${id}`, { method: 'DELETE' })
-    await load()
+    void load()
   }
 
   return (
     <div>
       <h2 className="text-xl font-semibold mb-2">Answers</h2>
-
       {question && (
         <div className="mb-4">
           <div className="font-medium">Question #{question.question_id}</div>
@@ -77,9 +76,7 @@ export default function AnswersPage() {
           />
           correct
         </label>
-        <button className="border px-3 py-1" onClick={add}>
-          Add
-        </button>
+        <button className="border px-3 py-1" onClick={add}>Add</button>
       </div>
 
       <ul className="space-y-2">
@@ -87,9 +84,7 @@ export default function AnswersPage() {
           <li key={a.answer_id} className="flex items-center gap-3">
             <span
               className={`px-2 py-0.5 rounded text-sm border ${
-                a.is_correct
-                  ? 'bg-green-100 border-green-400'
-                  : 'bg-gray-100 border-gray-300'
+                a.is_correct ? 'bg-green-100 border-green-400' : 'bg-gray-100 border-gray-300'
               }`}
             >
               {a.is_correct ? 'correct' : 'wrong'}
@@ -98,10 +93,7 @@ export default function AnswersPage() {
             <button className="border px-2 py-0.5" onClick={() => toggle(a)}>
               {a.is_correct ? 'Mark wrong' : 'Mark correct'}
             </button>
-            <button
-              className="border px-2 py-0.5"
-              onClick={() => remove(a.answer_id)}
-            >
+            <button className="border px-2 py-0.5" onClick={() => remove(a.answer_id)}>
               Delete
             </button>
           </li>
