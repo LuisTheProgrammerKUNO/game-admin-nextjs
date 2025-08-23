@@ -1,44 +1,57 @@
+// src/app/api/answers/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
-import type { Answer } from '@prisma/client'
 
-type AnswerUpdate = Partial<Pick<Answer, 'text' | 'is_correct'>>
-
-export async function GET(
-  _req: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  const { id } = await context.params
-  const a = await prisma.answer.findUnique({ where: { answer_id: Number(id) } })
-  return NextResponse.json(a)
+type CreateAnswerBody = {
+  question_id: number
+  text: string
+  is_correct?: boolean
 }
 
-export async function PUT(
-  req: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  const { id } = await context.params
-  const raw = (await req.json().catch(() => ({}))) as unknown
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const questionIdParam = searchParams.get('question_id')
 
-  const data: AnswerUpdate = {}
-  if (typeof raw === 'object' && raw !== null) {
-    const r = raw as Record<string, unknown>
-    if (typeof r.text === 'string') data.text = r.text
-    if (typeof r.is_correct === 'boolean') data.is_correct = r.is_correct
+  const where = questionIdParam
+    ? { question_id: Number(questionIdParam) }
+    : undefined
+
+  const answers = await prisma.answer.findMany({
+    where,
+    orderBy: { answer_id: 'asc' },
+  })
+
+  return NextResponse.json(answers)
+}
+
+export async function POST(req: NextRequest) {
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const updated = await prisma.answer.update({
-    where: { answer_id: Number(id) },
-    data,
-  })
-  return NextResponse.json(updated)
-}
+  // Narrow the type safely
+  const b = body as Partial<CreateAnswerBody>
+  if (
+    typeof b?.question_id !== 'number' ||
+    typeof b?.text !== 'string' ||
+    b.text.trim() === ''
+  ) {
+    return NextResponse.json(
+      { error: 'question_id (number) and text (string) are required' },
+      { status: 400 }
+    )
+  }
 
-export async function DELETE(
-  _req: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  const { id } = await context.params
-  await prisma.answer.delete({ where: { answer_id: Number(id) } })
-  return NextResponse.json({ ok: true })
+  const created = await prisma.answer.create({
+    data: {
+      question_id: b.question_id,
+      text: b.text,
+      is_correct: Boolean(b.is_correct),
+    },
+  })
+
+  return NextResponse.json(created, { status: 201 })
 }
