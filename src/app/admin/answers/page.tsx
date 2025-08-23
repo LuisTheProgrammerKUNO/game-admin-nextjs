@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Answer, Question } from '@prisma/client'
 
 export default function AnswersPage() {
@@ -10,19 +10,27 @@ export default function AnswersPage() {
   const [answers, setAnswers] = useState<Answer[]>([])
   const [text, setText] = useState('')
   const [correct, setCorrect] = useState(false)
+  const [refresh, setRefresh] = useState(0)
 
-  const load = useCallback(async () => {
-    if (qidParam) {
-      const q: (Question & { answers: Answer[] }) | null =
-        await fetch(`/api/questions/${qidParam}`).then((r) => r.json())
-      if (q) {
+  // Fetch when question_id or refresh changes
+  useEffect(() => {
+    let aborted = false
+    ;(async () => {
+      if (!qidParam) return
+      const q = (await fetch(`/api/questions/${qidParam}`).then(r => r.json())) as
+        | (Question & { answers: Answer[] })
+        | null
+      if (!aborted && q) {
         setQuestion(q)
         setAnswers(q.answers ?? [])
       }
+    })()
+    return () => {
+      aborted = true
     }
-  }, [qidParam])
+  }, [qidParam, refresh])
 
-  useEffect(() => { void load() }, [load])
+  const refetch = () => setRefresh((n) => n + 1)
 
   const add = async () => {
     if (!qidParam || !text.trim()) return
@@ -33,7 +41,7 @@ export default function AnswersPage() {
     })
     setText('')
     setCorrect(false)
-    void load()
+    refetch()
   }
 
   const toggle = async (a: Answer) => {
@@ -42,13 +50,13 @@ export default function AnswersPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ is_correct: !a.is_correct }),
     })
-    void load()
+    refetch()
   }
 
   const remove = async (id: number) => {
     if (!confirm('Delete answer?')) return
     await fetch(`/api/answers/${id}`, { method: 'DELETE' })
-    void load()
+    refetch()
   }
 
   return (
@@ -76,7 +84,9 @@ export default function AnswersPage() {
           />
           correct
         </label>
-        <button className="border px-3 py-1" onClick={add}>Add</button>
+        <button className="border px-3 py-1" onClick={add}>
+          Add
+        </button>
       </div>
 
       <ul className="space-y-2">
@@ -102,3 +112,4 @@ export default function AnswersPage() {
     </div>
   )
 }
+

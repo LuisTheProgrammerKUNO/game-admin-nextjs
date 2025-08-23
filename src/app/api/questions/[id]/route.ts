@@ -16,14 +16,16 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   const id = Number(params.id)
-  const body = (await req.json().catch(() => ({}))) as Partial<Record<string, unknown>>
+  const raw = (await req.json().catch(() => ({}))) as unknown
 
   const data: QuestionUpdate = {}
-
-  if (typeof body.text === 'string') data.text = body.text
-  if (typeof body.module_id === 'number') data.module_id = body.module_id
-  if (typeof body.type === 'string' && body.type in QuestionType) {
-    data.type = body.type as QuestionType
+  if (typeof raw === 'object' && raw !== null) {
+    const r = raw as Record<string, unknown>
+    if (typeof r.text === 'string') data.text = r.text
+    if (typeof r.module_id === 'number') data.module_id = r.module_id
+    if (typeof r.type === 'string' && r.type in QuestionType) {
+      data.type = r.type as QuestionType
+    }
   }
 
   const updated = await prisma.question.update({ where: { question_id: id }, data })
