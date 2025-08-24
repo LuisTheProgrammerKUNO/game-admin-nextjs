@@ -1,7 +1,9 @@
 // src/app/admin/answers/page.tsx
 import AnswersClient from './AnswersClient';
 
+// ensure this page never prerenders a stale static version
+export const dynamic = 'force-dynamic';
+
 export default function Page() {
-  // Server component wrapper — the UI logic lives in the client file
   return <AnswersClient />;
 }

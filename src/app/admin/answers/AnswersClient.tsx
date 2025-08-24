@@ -11,7 +11,7 @@ export default function AnswersClient() {
   const router = useRouter();
   const search = useSearchParams();
 
-  // Read query param (if present) so deep links continue to work
+  // read from URL if present
   const qidFromUrl = useMemo(() => {
     const raw = search.get('question_id');
     const n = Number(raw ?? 0);
@@ -26,12 +26,11 @@ export default function AnswersClient() {
   const [correct, setCorrect] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Load the list of questions once
+  // load the list of questions
   useEffect(() => {
     (async () => {
       try {
         const data: Question[] = await fetch('/api/questions', { cache: 'no-store' }).then(r => r.json());
-        // Keep a lite array for the picker
         setQuestions(data.map(q => ({ question_id: q.question_id, text: q.text })));
       } catch (e) {
         console.error('Failed to load questions', e);
@@ -39,20 +38,18 @@ export default function AnswersClient() {
     })();
   }, []);
 
-  // Keep URL in sync when the selection changes
+  // sync URL with selection
   useEffect(() => {
+    const url = new URL(window.location.href);
     if (selectedQid) {
-      const url = new URL(window.location.href);
       url.searchParams.set('question_id', String(selectedQid));
-      router.replace(url.pathname + '?' + url.searchParams.toString());
     } else {
-      const url = new URL(window.location.href);
       url.searchParams.delete('question_id');
-      router.replace(url.pathname);
     }
+    router.replace(url.pathname + (url.searchParams.toString() ? `?${url.searchParams}` : ''));
   }, [selectedQid, router]);
 
-  // Load the selected question + its answers
+  // load question + answers
   useEffect(() => {
     if (!selectedQid) {
       setQuestion(null);
@@ -127,12 +124,9 @@ export default function AnswersClient() {
       </div>
 
       {!questions.length && (
-        <div className="text-sm text-gray-500">
-          No questions yet. Create one first from the <a href="/admin/questions" className="underline">Questions</a> page.
-        </div>
+        <div className="text-sm text-gray-500">Loading questions…</div>
       )}
 
-      {/* Selected question summary */}
       {selectedQid && question && (
         <div className="rounded border p-3 bg-gray-50">
           <div className="font-medium">Question #{question.question_id}</div>
@@ -140,7 +134,6 @@ export default function AnswersClient() {
         </div>
       )}
 
-      {/* Answers manager */}
       {selectedQid ? (
         <>
           <div className="flex gap-2">
@@ -158,7 +151,7 @@ export default function AnswersClient() {
           </div>
 
           {loading ? (
-            <div className="text-sm text-gray-500">Loading…</div>
+            <div className="text-sm text-gray-500">Loading answers…</div>
           ) : (
             <ul className="space-y-2">
               {answers.map(a => (
