@@ -31,7 +31,7 @@ model Question {
   text        String       @db.Text
 
   // FK -> modules.module_id
-  module Module @relation(name: "ModuleQuestions", fields: [module_id], references: [module_id], onDelete: Cascade)
+  module Module @relation("ModuleQuestions", fields: [module_id], references: [module_id], onDelete: Cascade, onUpdate: Cascade)
 
   // back-rel
   answers Answer[] @relation("QuestionAnswers")
@@ -46,7 +46,7 @@ model Answer {
   is_correct  Boolean @default(false)
 
   // FK -> questions.question_id
-  question Question @relation(name: "QuestionAnswers", fields: [question_id], references: [question_id], onDelete: Cascade)
+  question Question @relation("QuestionAnswers", fields: [question_id], references: [question_id], onDelete: Cascade, onUpdate: Cascade)
 
   @@map("answers")
 }
