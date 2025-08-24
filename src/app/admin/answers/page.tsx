@@ -1,9 +1,11 @@
 // src/app/admin/answers/page.tsx
-import AnswersClient from './AnswersClient';
+'use client'
 
-// ensure this page never prerenders a stale static version
-export const dynamic = 'force-dynamic';
+// make sure this page is always dynamic (no static export)
+export const dynamic = 'force-dynamic'
+
+import AnswersClient from './AnswersClient'
 
 export default function Page() {
-  return <AnswersClient />;
+  return <AnswersClient />
 }
