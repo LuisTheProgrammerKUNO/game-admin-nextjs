@@ -6,12 +6,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const id = Number(params.id);
-  if (!Number.isFinite(id)) return NextResponse.json(null);
+  const { id } = await context.params;
   const q = await prisma.question.findUnique({
-    where: { question_id: id },
+    where: { question_id: Number(id) },
     include: { module: true, answers: true },
   });
   return NextResponse.json(q);
