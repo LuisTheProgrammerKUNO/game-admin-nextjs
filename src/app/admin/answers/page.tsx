@@ -1,11 +1,14 @@
 // src/app/admin/answers/page.tsx
-'use client'
-
-// make sure this page is always dynamic (no static export)
-export const dynamic = 'force-dynamic'
-
+import { Suspense } from 'react'
 import AnswersClient from './AnswersClient'
 
+// optional but safe when you fetch on the client only
+export const dynamic = 'force-dynamic'
+
 export default function Page() {
-  return <AnswersClient />
+  return (
+    <Suspense fallback={<div className="p-4 text-sm opacity-70">Loading…</div>}>
+      <AnswersClient />
+    </Suspense>
+  )
 }
