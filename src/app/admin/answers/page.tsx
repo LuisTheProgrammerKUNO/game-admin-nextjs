@@ -1,4 +1,7 @@
-import AnswersClient from './AnswersClient'
+// src/app/admin/answers/page.tsx
+import AnswersClient from './AnswersClient';
+
 export default function Page() {
-  return <AnswersClient />
+  // Server component wrapper — the UI logic lives in the client file
+  return <AnswersClient />;
 }
