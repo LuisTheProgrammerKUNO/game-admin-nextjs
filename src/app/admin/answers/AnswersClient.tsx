@@ -1,4 +1,3 @@
-// src/app/admin/answers/AnswersClient.tsx
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
@@ -153,7 +152,7 @@ export default function AnswersClient() {
 
           <div className="flex gap-2 mb-4">
             <input
-              className="border px-2 py-1 flex-1"
+              className="border rounded px-2 py-1 flex-1 bg-white text-black dark:bg-gray-800 dark:text-white"
               value={text}
               onChange={e => setText(e.target.value)}
               placeholder="Answer text"
@@ -166,7 +165,7 @@ export default function AnswersClient() {
               />
               correct
             </label>
-            <button className="border px-3 py-1" onClick={add}>Add</button>
+            <button className="border px-3 py-1 rounded" onClick={add}>Add</button>
           </div>
 
           <ul className="space-y-2">
@@ -176,10 +175,10 @@ export default function AnswersClient() {
                   {a.is_correct ? 'correct' : 'wrong'}
                 </span>
                 <span className="flex-1">{a.text}</span>
-                <button className="border px-2 py-0.5" onClick={() => toggle(a)}>
+                <button className="border px-2 py-0.5 rounded" onClick={() => toggle(a)}>
                   {a.is_correct ? 'Mark wrong' : 'Mark correct'}
                 </button>
-                <button className="border px-2 py-0.5" onClick={() => remove(a.answer_id)}>
+                <button className="border px-2 py-0.5 rounded" onClick={() => remove(a.answer_id)}>
                   Delete
                 </button>
               </li>
