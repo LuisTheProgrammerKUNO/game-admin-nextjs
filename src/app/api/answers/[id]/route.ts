@@ -1,52 +1,40 @@
-import { NextRequest, NextResponse } from 'next/server'
-import prisma from '@lib/prisma'
-import type { Answer } from '@prisma/client'
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@lib/prisma';
 
-type AnswerUpdate = Partial<Pick<Answer, 'text' | 'is_correct'>>
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(
   _req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await context.params
-  const answer = await prisma.answer.findUnique({
-    where: { answer_id: Number(id) },
-  })
-  return NextResponse.json(answer)
+  const id = Number(params.id);
+  if (!Number.isFinite(id)) return NextResponse.json(null);
+  const a = await prisma.answer.findUnique({
+    where: { answer_id: id },
+    select: { answer_id: true, question_id: true, text: true, is_correct: true },
+  });
+  return NextResponse.json(a);
 }
 
 export async function PUT(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await context.params
-
-  let raw: unknown
-  try {
-    raw = await req.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
-  }
-
-  const data: AnswerUpdate = {}
-  if (raw && typeof raw === 'object') {
-    const r = raw as Record<string, unknown>
-    if (typeof r.text === 'string') data.text = r.text
-    if (typeof r.is_correct === 'boolean') data.is_correct = r.is_correct
-  }
-
-  const updated = await prisma.answer.update({
-    where: { answer_id: Number(id) },
-    data,
-  })
-  return NextResponse.json(updated)
+  const id = Number(params.id);
+  const body = await req.json().catch(() => ({}));
+  const data: { text?: string; is_correct?: boolean } = {};
+  if (typeof body?.text === 'string') data.text = body.text;
+  if (typeof body?.is_correct === 'boolean') data.is_correct = body.is_correct;
+  const updated = await prisma.answer.update({ where: { answer_id: id }, data });
+  return NextResponse.json(updated);
 }
 
 export async function DELETE(
   _req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await context.params
-  await prisma.answer.delete({ where: { answer_id: Number(id) } })
-  return NextResponse.json({ ok: true })
+  const id = Number(params.id);
+  await prisma.answer.delete({ where: { answer_id: id } });
+  return NextResponse.json({ ok: true });
 }
