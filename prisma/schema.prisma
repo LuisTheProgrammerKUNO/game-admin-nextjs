@@ -50,3 +50,24 @@ model Answer {
 
   @@map("answers")
 }
+
+model User {
+  id               Int       @id @default(autoincrement())
+  username         String    @unique
+  email            String    @unique
+  passwordHash     String?
+  displayName      String?
+  gender           String?
+  birthday         String?
+  avatar           Bytes?
+  avatarUrl        String?
+  role             String?   // 'admin' or 'user' (optional)
+  isActive         Boolean   @default(true)
+
+  // If not null => user has requested deletion (admin can approve/cancel)
+  requestDeletion  DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@map("user")
+}
