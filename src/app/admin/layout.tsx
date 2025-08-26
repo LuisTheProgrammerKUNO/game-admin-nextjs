@@ -9,7 +9,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <a className="underline" href="/admin/modules">Modules</a>
         <a className="underline" href="/admin/questions">Questions</a>
         <a className="underline" href="/admin/answers">Answers</a>
-        <a className="underline" href="src\app\admin\pending-users\page.tsx">Pending Request</a>
+        <a className="underline" href="/admin/pending-users">Pending Request</a>
       </nav>}
       <Suspense fallback={<div className="p-4 text-sm opacity-70">Loading…</div>}>
         {children}
