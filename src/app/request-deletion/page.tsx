@@ -1,47 +1,60 @@
-//FOR TESTING PURPOSES ONLY
-//In production, this should be a protected route, accessible only to authenticated users.
-
 'use client'
 
 import { useState } from 'react'
 
 export default function RequestDeletionPage() {
   const [email, setEmail] = useState('')
-  const [status, setStatus] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
 
-  const submit = async () => {
-    setStatus('Submitting...')
-    const res = await fetch('/api/users/request-deletion', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    })
-    const data = await res.json()
-    if (res.ok) {
-      setStatus('Request submitted successfully!')
-      setEmail('')
-    } else {
-      setStatus(`Error: ${data.error || 'Failed'}`)
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setMsg(null)
+    if (!email.trim()) {
+      setMsg('Please enter your email.')
+      return
+    }
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/users/request-deletion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setMsg(data?.error ?? `Request failed (${res.status})`)
+      } else {
+        setMsg('Request submitted. You can close this page now.')
+        setEmail('')
+      }
+    } catch (err: any) {
+      setMsg(err?.message ?? 'Network error')
+    } finally {
+      setSubmitting(false)
     }
   }
 
   return (
-    <div className="max-w-md mx-auto p-6">
-      <h1 className="text-xl font-semibold mb-4">Request Account Deletion</h1>
-      <input
-        className="border px-3 py-2 w-full mb-3"
-        type="email"
-        placeholder="Enter your email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-      />
-      <button
-        className="border px-4 py-2 bg-red-600 text-white rounded"
-        onClick={submit}
-      >
-        Submit Request
-      </button>
-      {status && <p className="mt-3 text-sm">{status}</p>}
+    <div className="max-w-lg mx-auto p-6">
+      <h1 className="text-xl font-semibold mb-3">Request Account Deletion</h1>
+      <form onSubmit={submit} className="space-y-3">
+        <input
+          className="border px-3 py-2 w-full bg-black/20"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={submitting}
+        />
+        <button
+          type="submit"
+          disabled={submitting}
+          className="border px-3 py-2 rounded bg-red-600 disabled:opacity-60"
+        >
+          {submitting ? 'Submitting…' : 'Submit Request'}
+        </button>
+      </form>
+      {msg && <div className="mt-3 text-sm opacity-80">{msg}</div>}
     </div>
   )
 }
