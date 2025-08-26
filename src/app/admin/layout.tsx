@@ -10,6 +10,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <a className="underline" href="/admin/questions">Questions</a>
         <a className="underline" href="/admin/answers">Answers</a>
         <a className="underline" href="/admin/pending-users">Pending Account Deletion Requests</a>
+        {/* NEW: quick link to the public test page */}
+        <a className="underline" href="/request-deletion">Request Deletion (test)</a>
       </nav>
 
       <Suspense fallback={<div className="p-4 text-sm opacity-70">Loading…</div>}>
