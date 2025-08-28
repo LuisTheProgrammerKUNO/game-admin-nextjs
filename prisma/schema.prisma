@@ -1,17 +1,117 @@
-// prisma/schema.prisma
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["admin_access", "neon_auth", "public", "modules_schema"]
 }
 
+/* =======================
+   ADMIN SCHEMA (unchanged)
+========================= */
+model admin {
+  id              Int             @id @default(autoincrement())
+  username        String          @unique
+  email           String
+  password        String?
+  last_login      DateTime?       @db.Timestamptz(6)
+  role            String?         @default("admin")
+  status          String?         @default("active")
+  failed_attempts Int?            @default(0)
+  created_at      DateTime?       @default(now()) @db.Timestamp(6)
+  updated_at      DateTime?       @default(now()) @db.Timestamp(6)
+  announcements   announcements[]
+  login_history   login_history[]
+
+  @@schema("admin_access")
+}
+
+model announcements {
+  id         Int       @id @default(autoincrement())
+  title      String    @db.VarChar(255)
+  message    String
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
+  is_active  Boolean?  @default(true)
+  author_id  Int?
+  admin      admin?    @relation(fields: [author_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("admin_access")
+}
+
+model login_history {
+  id         Int       @id @default(autoincrement())
+  admin_id   Int
+  login_time DateTime? @default(now()) @db.Timestamp(6)
+  ip_address String?
+  user_agent String?
+  success    Boolean
+  admin      admin     @relation(fields: [admin_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("admin_access")
+}
+
+/* =======================
+   NEON AUTH MIRROR (unchanged)
+========================= */
+model users_sync {
+  raw_json   Json
+  id         String    @id @default(dbgenerated("(raw_json ->> 'id'::text)"))
+  name       String?   @default(dbgenerated("(raw_json ->> 'display_name'::text)"))
+  email      String?   @default(dbgenerated("(raw_json ->> 'primary_email'::text)"))
+  created_at DateTime? @default(dbgenerated("to_timestamp((trunc((((raw_json ->> 'signed_up_at_millis'::text))::bigint)::double precision) / (1000)::double precision))")) @db.Timestamptz(6)
+  updated_at DateTime? @db.Timestamptz(6)
+  deleted_at DateTime? @db.Timestamptz(6)
+  User       User?
+
+  @@index([deleted_at])
+  @@schema("neon_auth")
+}
+
+/* =======================
+   PUBLIC USERS (renamed + mapped)
+========================= */
+model User {
+  /// From `public.users.id` — this is a string id that matches `neon_auth.users_sync.id`
+  id              String    @id
+  first_name      String
+  last_name       String
+  middle_name     String?
+  age             Int?
+  school          String?
+  birthday        DateTime? @db.Date
+  location        String?
+  is_active       Boolean?  @default(true)
+
+  /// Column in DB is `deletion_req` — expose as `requestDeletion` in Prisma
+  requestDeletion DateTime? @map("deletion_req") @db.Timestamptz(6)
+
+  /// Relation to neon_auth.users_sync (contains `email`+`name`)
+  users_sync users_sync @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("users")
+  @@schema("public")
+}
+
+/* =======================
+   PASSCODES (unchanged)
+========================= */
+model passcodes {
+  id          Int      @id(map: "AdminPasscode_pkey") @default(autoincrement())
+  code        String
+  valid_from  DateTime
+  valid_until DateTime
+
+  @@schema("admin_access")
+}
+
+/* =======================
+   QUIZ MODULES (unchanged)
+========================= */
 enum QuestionType {
   mul_choice
   fill_blank
   identification
+
+  @@schema("modules_schema")
 }
 
 model Module {
@@ -22,6 +122,7 @@ model Module {
   questions Question[] @relation("ModuleQuestions")
 
   @@map("modules")
+  @@schema("modules_schema")
 }
 
 model Question {
@@ -37,6 +138,7 @@ model Question {
   answers Answer[] @relation("QuestionAnswers")
 
   @@map("questions")
+  @@schema("modules_schema")
 }
 
 model Answer {
@@ -49,25 +151,5 @@ model Answer {
   question Question @relation("QuestionAnswers", fields: [question_id], references: [question_id], onDelete: Cascade, onUpdate: Cascade)
 
   @@map("answers")
-}
-
-model User {
-  id               Int       @id @default(autoincrement())
-  username         String    @unique
-  email            String    @unique
-  passwordHash     String?
-  displayName      String?
-  gender           String?
-  birthday         String?
-  avatar           Bytes?
-  avatarUrl        String?
-  role             String?   // 'admin' or 'user' (optional)
-  isActive         Boolean   @default(true)
-
-  // If not null => user has requested deletion (admin can approve/cancel)
-  requestDeletion  DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  @@map("user")
+  @@schema("modules_schema")
 }
