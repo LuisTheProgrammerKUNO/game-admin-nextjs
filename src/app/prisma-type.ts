@@ -1,11 +1,10 @@
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client'
 
-type UserRow = Prisma.UserGetPayload<{
+export type UserRow = Prisma.usersGetPayload<{
   select: {
-    id: true;
-    first_name: true;
-    last_name: true;
-    requestDeletion: true;
-    users_sync: { select: { email: true; name: true } };
-  };
-}>;
+    id: true
+    first_name: true
+    last_name: true
+    username: true
+  }
+}>
