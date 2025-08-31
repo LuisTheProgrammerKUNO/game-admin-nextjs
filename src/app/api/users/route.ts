@@ -5,43 +5,26 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  const rows = await prisma.user.findMany({
-    orderBy: { // newest activity first (uses public.users.updated_at if exists; else stable)
-      id: 'asc',
-    },
+  const rows = await prisma.users.findMany({
     select: {
       id: true,
+      username: true,
       first_name: true,
       last_name: true,
-      middle_name: true,
-      age: true,
-      school: true,
-      birthday: true,
-      location: true,
-      is_active: true,
-      requestDeletion: true,           // from public.users.deletion_req
-      users_sync: {                    // from neon_auth.users_sync (mirror)
-        select: { email: true, name: true, created_at: true, updated_at: true },
-      },
+      deletion_req: true,
+      users_sync: { select: { email: true, name: true } },
     },
+    orderBy: { id: 'asc' },
   })
 
-  // Optional: shape a flatter object for the UI
-  const data = rows.map(u => ({
+  type Row = typeof rows[number] // ✅ no implicit any in .map below
+
+  const data = rows.map((u: Row) => ({
     id: u.id,
-    name: u.users_sync?.name ?? `${u.first_name} ${u.last_name}`.trim(),
+    username: u.username,
     email: u.users_sync?.email ?? null,
-    first_name: u.first_name,
-    last_name: u.last_name,
-    middle_name: u.middle_name,
-    age: u.age,
-    school: u.school,
-    birthday: u.birthday,
-    location: u.location,
-    is_active: u.is_active ?? true,
-    requestDeletion: u.requestDeletion,
-    createdAt: u.users_sync?.created_at ?? null,
-    updatedAt: u.users_sync?.updated_at ?? null,
+    name: u.users_sync?.name ?? `${u.first_name} ${u.last_name}`.trim(),
+    requestDeletion: u.deletion_req ? u.deletion_req.toISOString() : null,
   }))
 
   return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } })
