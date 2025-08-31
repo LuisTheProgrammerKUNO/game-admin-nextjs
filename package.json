@@ -4,14 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start",
-    "lint": "eslint",
-    "seed": "prisma db seed",
-    "migrate:dev": "prisma migrate dev && npm run seed",
-    "postinstall": "prisma generate"
-  },
+  "dev": "next dev",
+  "build": "prisma generate && next build", 
+  "start": "next start",
+  "lint": "eslint",
+  "seed": "prisma db seed",
+  "migrate:dev": "prisma migrate dev && npm run seed",
+  "postinstall": "prisma generate"
+}
+,
   "dependencies": {
     "@prisma/client": "^6.15.0",
     "next": "15.5.0",
