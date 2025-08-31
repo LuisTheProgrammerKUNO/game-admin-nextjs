@@ -1,5 +1,3 @@
-//List pending deletion requests
-
 import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 
@@ -7,10 +5,26 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  const rows = await prisma.user.findMany({
-    where: { requestDeletion: { not: null } },
-    orderBy: { updatedAt: 'desc' },
-    select: { id: true, username: true, email: true, requestDeletion: true },
+  const rows = await prisma.users.findMany({
+    where: { deletion_req: { not: null } },
+    orderBy: { deletion_req: 'desc' },
+    select: {
+      id: true,
+      username: true,
+      deletion_req: true,
+      users_sync: { select: { email: true, name: true } },
+      first_name: true,
+      last_name: true,
+    },
   })
-  return NextResponse.json(rows, { headers: { 'Cache-Control': 'no-store' } })
+
+  const data = rows.map(u => ({
+    id: u.id,
+    username: u.username,
+    email: u.users_sync?.email ?? null,
+    name: u.users_sync?.name ?? `${u.first_name} ${u.last_name}`.trim(),
+    requestDeletion: u.deletion_req,
+  }))
+
+  return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } })
 }

@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react'
 
 type PendingUser = {
-  id: number
+  id: string
   username: string
-  email: string
+  email: string | null
+  name: string | null
   requestDeletion: string | null
 }
 
@@ -30,13 +31,13 @@ export default function PendingUsersPage() {
 
   useEffect(() => { load() }, [])
 
-  const cancel = async (id: number) => {
+  const cancel = async (id: string) => {
     if (!confirm('Cancel deletion request for this user?')) return
     await fetch(`/api/users/${id}/cancel`, { method: 'POST' })
     load()
   }
 
-  const remove = async (id: number) => {
+  const remove = async (id: string) => {
     if (!confirm('Permanently delete this user?')) return
     const res = await fetch(`/api/users/${id}`, { method: 'DELETE' })
     if (!res.ok) {
@@ -63,13 +64,13 @@ export default function PendingUsersPage() {
             <thead>
               <tr className="[&_th]:text-left [&_th]:px-2 [&_th]:py-1 border-b">
                 <th style={{width: '15%'}}>User ID</th>
-                <th style={{width: '25%'}}>Username</th>
+                <th style={{width: '20%'}}>Username</th>
                 <th style={{width: '30%'}}>Email</th>
-                <th style={{width: '30%'}}>Actions</th>
+                <th style={{width: '35%'}}>Actions</th>
               </tr>
             </thead>
             <tbody className="[&_td]:px-2 [&_td]:py-2">
-              {items.map(u => (
+              {items.map((u: PendingUser) => (
                 <tr key={u.id} className="border-b">
                   <td className="tabular-nums">{u.id}</td>
                   <td>{u.username}</td>

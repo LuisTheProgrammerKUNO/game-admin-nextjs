@@ -1,26 +1,19 @@
-//Cancel deletion request (admin action)
-
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
-
-// POST /api/users/[id]/cancel -> clears requestDeletion
 export async function POST(
-  _req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  _req: Request,
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await context.params
-  const userId = Number(id)
-  if (!Number.isFinite(userId)) {
+  const id = params.id
+  if (!id) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
   }
 
-  const updated = await prisma.user.update({
-    where: { id: userId },
-    data: { requestDeletion: null },
-    select: { id: true },
+  await prisma.users.update({
+    where: { id },
+    data: { deletion_req: null },
   })
-  return NextResponse.json({ ok: true, id: updated.id })
+
+  return NextResponse.json({ ok: true })
 }
