@@ -16,7 +16,7 @@ export default function RequestDeletionPage() {
     }
     setSubmitting(true)
     try {
-      const res = await fetch('/api/request-deletion', {
+      const res = await fetch('/api/request-deletion(route)', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
