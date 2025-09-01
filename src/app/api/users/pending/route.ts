@@ -14,6 +14,7 @@ export async function GET() {
       deletion_req: true,
       users_sync: { select: { email: true, name: true } },
       first_name: true,
+      middle_name: true,
       last_name: true,
     },
   })
@@ -22,7 +23,7 @@ export async function GET() {
     id: u.id,
     username: u.username,
     email: u.users_sync?.email ?? null,
-    name: u.users_sync?.name ?? `${u.first_name} ${u.last_name}`.trim(),
+    name: u.users_sync?.name ?? `${u.first_name} ${u.middle_name ?? ''} ${u.last_name}`.trim(),
     requestDeletion: u.deletion_req,
   }))
 
