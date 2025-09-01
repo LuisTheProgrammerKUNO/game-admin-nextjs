@@ -26,6 +26,8 @@ export default function UserManagementPage() {
   const handleAction = async (id: string, action: string) => {
     try {
       let endpoint = ''
+      let method = 'POST'
+      let body: any = {}
 
       if (action === 'approveDeletion') {
         endpoint = `/api/admin/users/${id}/approve-deletion`
@@ -33,11 +35,18 @@ export default function UserManagementPage() {
         endpoint = `/api/admin/users/${id}/cancel-deletion`
       } else if (action === 'toggleActive') {
         endpoint = `/api/admin/users/${id}`
+        method = 'PATCH'
+        body.toggleActive = true
+      } else if (action === 'resetCoins') {
+        endpoint = `/api/admin/users/${id}`
+        method = 'PATCH'
+        body.resetCoins = true
       }
 
       await fetch(endpoint, {
-        method: 'POST',
+        method,
         headers: { 'Content-Type': 'application/json' },
+        body: Object.keys(body).length ? JSON.stringify(body) : undefined,
       })
 
       fetchUsers()
@@ -51,47 +60,62 @@ export default function UserManagementPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">User Management</h1>
-      <table className="w-full border">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="p-2 border">ID</th>
-            <th className="p-2 border">Name</th>
-            <th className="p-2 border">Email</th>
-            <th className="p-2 border">Status</th>
-            <th className="p-2 border">Deletion Requested</th>
-            <th className="p-2 border">Actions</th>
+      <table className="min-w-full border-collapse border border-gray-600">
+        <thead className="bg-gray-800 text-white">
+          <tr>
+            <th className="border border-gray-600 px-4 py-2">ID</th>
+            <th className="border border-gray-600 px-4 py-2">Name</th>
+            <th className="border border-gray-600 px-4 py-2">Email</th>
+            <th className="border border-gray-600 px-4 py-2">Status</th>
+            <th className="border border-gray-600 px-4 py-2">Deletion Requested</th>
+            <th className="border border-gray-600 px-4 py-2">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {users.map((u) => (
-            <tr key={u.id} className="text-center">
-              <td className="p-2 border">{u.id}</td>
-              <td className="p-2 border">{u.first_name} {u.last_name}</td>
-              <td className="p-2 border">{u.email}</td>
-              <td className="p-2 border">{u.is_active ? 'Active' : 'Inactive'}</td>
-              <td className="p-2 border">
+          {users.map((u, i) => (
+            <tr
+              key={u.id}
+              className={i % 2 === 0 ? 'bg-gray-900 text-white' : 'bg-gray-700 text-white'}
+            >
+              <td className="border border-gray-600 px-4 py-2">{u.id}</td>
+              <td className="border border-gray-600 px-4 py-2">
+                {u.first_name} {u.last_name}
+              </td>
+              <td className="border border-gray-600 px-4 py-2">{u.email}</td>
+              <td className="border border-gray-600 px-4 py-2">
+                {u.is_active ? 'Active' : 'Inactive'}
+              </td>
+              <td className="border border-gray-600 px-4 py-2">
                 {u.deletion_req ? new Date(u.deletion_req).toLocaleDateString() : '—'}
               </td>
-              <td className="p-2 border space-x-2">
+              <td className="border border-gray-600 px-4 py-2 space-x-2">
                 {/* Always allow toggle active/inactive */}
                 <button
-                  className="px-2 py-1 bg-blue-500 text-white rounded"
+                  className="px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded"
                   onClick={() => handleAction(u.id, 'toggleActive')}
                 >
                   {u.is_active ? 'Deactivate' : 'Activate'}
+                </button>
+
+                {/* Reset coins button */}
+                <button
+                  className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 rounded"
+                  onClick={() => handleAction(u.id, 'resetCoins')}
+                >
+                  Reset Coins
                 </button>
 
                 {/* Show only if deletion_req exists */}
                 {u.deletion_req && (
                   <>
                     <button
-                      className="px-2 py-1 bg-red-600 text-white rounded"
+                      className="px-2 py-1 bg-red-600 hover:bg-red-700 rounded"
                       onClick={() => handleAction(u.id, 'approveDeletion')}
                     >
                       Approve Deletion
                     </button>
                     <button
-                      className="px-2 py-1 bg-yellow-500 text-white rounded"
+                      className="px-2 py-1 bg-gray-600 hover:bg-gray-700 rounded"
                       onClick={() => handleAction(u.id, 'cancelDeletion')}
                     >
                       Cancel Deletion
