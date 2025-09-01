@@ -1,34 +1,34 @@
+// src/app/api/request-deletion-route/route.ts
 import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
-
-// POST /api/request-deletion
-// Body: { id: string }
 export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => ({}))
-    const id = typeof body?.id === 'string' ? body.id : null
-
-    if (!id) {
-      return NextResponse.json({ error: 'Invalid or missing id' }, { status: 400 })
+    const { email } = await req.json()
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
-    const user = await prisma.users.update({
-      where: { id },
-      data: { deletion_req: new Date() }, // ✅ correct field from schema
-      select: { id: true, username: true, deletion_req: true },
+    // 1️⃣ Find the user in users_sync
+    const syncUser = await prisma.users_sync.findUnique({
+      where: { email },
+      select: { id: true },
     })
 
-    return NextResponse.json({
-      ok: true,
-      id: user.id,
-      username: user.username,
-      requestDeletion: user.deletion_req ? user.deletion_req.toISOString() : null,
+    if (!syncUser) {
+      return NextResponse.json({ error: 'User not found in sync table' }, { status: 404 })
+    }
+
+    // 2️⃣ Update users table using the same id
+    const updated = await prisma.users.update({
+      where: { id: syncUser.id },
+      data: { deletion_req: new Date() },
+      select: { id: true, deletion_req: true },
     })
+
+    return NextResponse.json({ ok: true, user: updated })
   } catch (err: any) {
-    console.error('Error in /api/request-deletion:', err)
-    return NextResponse.json({ error: 'Failed to request deletion' }, { status: 500 })
+    console.error('Request deletion error:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -1,21 +1,34 @@
+// src/app/api/users/cancel/route.ts
 import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 
-// ✅ no explicit NextRequest / param types → avoids ParamCheck error
-export async function POST(_req: Request, context: any) {
-  const id = context?.params?.id as string
-  if (!id) {
-    return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
-  }
-
+export async function POST(req: Request) {
   try {
-    await prisma.users.update({
-      where: { id },
-      data: { deletion_req: null },
+    const { email } = await req.json()
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+    }
+
+    // 1️⃣ Find the user in users_sync
+    const syncUser = await prisma.users_sync.findUnique({
+      where: { email },
+      select: { id: true },
     })
-    return NextResponse.json({ ok: true })
+
+    if (!syncUser) {
+      return NextResponse.json({ error: 'User not found in sync table' }, { status: 404 })
+    }
+
+    // 2️⃣ Reset deletion request in users table
+    const updated = await prisma.users.update({
+      where: { id: syncUser.id },
+      data: { deletion_req: null },
+      select: { id: true, deletion_req: true },
+    })
+
+    return NextResponse.json({ ok: true, user: updated })
   } catch (err: any) {
-    console.error('Cancel error:', err)
-    return NextResponse.json({ error: 'Failed to cancel deletion' }, { status: 500 })
+    console.error('Cancel deletion error:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
