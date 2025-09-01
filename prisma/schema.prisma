@@ -52,10 +52,10 @@ model login_history {
 
 model users_sync {
   raw_json   Json
-  id         String    @id @default(dbgenerated("(raw_json ->> 'id'::text)"))
-  name       String?   @default(dbgenerated("(raw_json ->> 'display_name'::text)"))
-  email      String?   @default(dbgenerated("(raw_json ->> 'primary_email'::text)"))
-  created_at DateTime? @default(dbgenerated("to_timestamp((trunc((((raw_json ->> 'signed_up_at_millis'::text))::bigint)::double precision) / (1000)::double precision))")) @db.Timestamptz(6)
+  id         String    @id
+  name       String?
+  email      String?   @unique
+  created_at DateTime? @db.Timestamptz(6)
   updated_at DateTime? @db.Timestamptz(6)
   deleted_at DateTime? @db.Timestamptz(6)
   user       users?
@@ -66,6 +66,7 @@ model users_sync {
 
 model users {
   id                 String         @id
+  username           String         @unique
   first_name         String
   last_name          String
   middle_name        String?
@@ -133,12 +134,6 @@ model transactions {
   product_id        String?
   product_name      String?
   users             users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@schema("public")
-}
-
-model processed_events {
-  id String @id
 
   @@schema("public")
 }
