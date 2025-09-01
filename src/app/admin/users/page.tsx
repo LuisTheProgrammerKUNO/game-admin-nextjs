@@ -10,7 +10,7 @@ type User = {
   school?: string
   birthday?: string
   location?: string
-  coins: number
+  coins?: number
   is_active: boolean
   deletion_req?: string
   email?: string
@@ -18,6 +18,7 @@ type User = {
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([])
+  const [hover, setHover] = useState(false)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [sortConfig, setSortConfig] = useState<{ key: keyof User; direction: 'asc' | 'desc' } | null>(null)
@@ -31,13 +32,24 @@ export default function UserManagementPage() {
     try {
       const res = await fetch('/api/admin/users')
       const data = await res.json()
-      setUsers(data)
+      console.log("API response:", data)
+
+      // Ensure it's always an array
+      if (Array.isArray(data)) {
+        setUsers(data)
+      } else if (Array.isArray(data.users)) {
+        setUsers(data.users)
+      } else {
+        setUsers([])
+      }
     } catch (err) {
       console.error('Error loading users:', err)
+      setUsers([]) // fallback to avoid filter crash
     } finally {
       setLoading(false)
     }
   }
+
 
   useEffect(() => {
     fetchUsers()
@@ -83,12 +95,18 @@ export default function UserManagementPage() {
       (u.email ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
+  function normalize(val: any) {
+    if (typeof val === 'number') return val
+    if (typeof val === 'boolean') return val ? 1 : 0
+    return val?.toString().toLowerCase() ?? ''
+  }
+
   // ⬆️⬇️ Sorting
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     if (!sortConfig) return 0
     const { key, direction } = sortConfig
-    const valA = a[key] ?? ''
-    const valB = b[key] ?? ''
+    const valA = normalize(a[key])
+    const valB = normalize(b[key])
     if (valA < valB) return direction === 'asc' ? -1 : 1
     if (valA > valB) return direction === 'asc' ? 1 : -1
     return 0
@@ -161,7 +179,13 @@ export default function UserManagementPage() {
               key={u.id}
               className={i % 2 === 0 ? 'bg-gray-900 text-white' : 'bg-gray-700 text-white'}
             >
-              <td className="border border-gray-600 px-2 py-1">{u.id}</td>
+              <td
+                className="border border-gray-600 px-2 py-1"
+                onMouseEnter={() => setHover(true)}
+                onMouseLeave={() => setHover(false)}
+              >
+                {hover ? u.id : `${u.id.slice(0, 8)}...`}
+              </td>
               <td className="border border-gray-600 px-2 py-1">{u.first_name}</td>
               <td className="border border-gray-600 px-2 py-1">{u.middle_name || '—'}</td>
               <td className="border border-gray-600 px-2 py-1">{u.last_name}</td>
@@ -178,21 +202,23 @@ export default function UserManagementPage() {
                 {u.deletion_req ? new Date(u.deletion_req).toLocaleDateString() : '—'}
               </td>
               <td className="border border-gray-600 px-2 py-1">{u.email || '—'}</td>
-              <td className="border border-gray-600 px-2 py-1 space-x-1">
-                <button
-                  className="px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded"
-                  onClick={() => handleAction(u.id, 'toggleActive')}
-                >
-                  {u.is_active ? 'Deactivate' : 'Activate'}
-                </button>
-                <button
-                  className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 rounded"
-                  onClick={() => handleAction(u.id, 'resetCoins')}
-                >
-                  Reset Coins
-                </button>
+              <td className="grid grid-rows-auto grid-cols-1 border border-gray-600 px-2 py-1 space-x-1">
+                <div className='grid grid-cols-2 gap-2'>
+                  <button
+                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded"
+                    onClick={() => handleAction(u.id, 'toggleActive')}
+                  >
+                    {u.is_active ? 'Deactivate' : 'Activate'}
+                  </button>
+                  <button
+                    className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 rounded"
+                    onClick={() => handleAction(u.id, 'resetCoins')}
+                  >
+                    Reset Coins
+                  </button>
+                </div>
                 {u.deletion_req && (
-                  <>
+                  <div className='grid grid-cols-2 gap-2 mt-2'>
                     <button
                       className="px-2 py-1 bg-red-600 hover:bg-red-700 rounded"
                       onClick={() => handleAction(u.id, 'approveDeletion')}
@@ -205,7 +231,7 @@ export default function UserManagementPage() {
                     >
                       Cancel Deletion
                     </button>
-                  </>
+                  </div>
                 )}
               </td>
             </tr>

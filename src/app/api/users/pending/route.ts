@@ -10,7 +10,6 @@ export async function GET() {
     orderBy: { deletion_req: 'desc' },
     select: {
       id: true,
-      username: true,
       deletion_req: true,
       users_sync: { select: { email: true, name: true } },
       first_name: true,
@@ -21,9 +20,9 @@ export async function GET() {
 
   const data = rows.map(u => ({
     id: u.id,
-    username: u.username,
+    username: u.users_sync?.name,
     email: u.users_sync?.email ?? null,
-    name: u.users_sync?.name ?? `${u.first_name} ${u.middle_name ?? ''} ${u.last_name}`.trim(),
+    name: `${u.first_name} ${u.middle_name ?? ''} ${u.last_name}`.trim(),
     requestDeletion: u.deletion_req,
   }))
 
