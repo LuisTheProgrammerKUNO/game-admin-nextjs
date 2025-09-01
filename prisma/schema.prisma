@@ -79,6 +79,7 @@ model users_sync {
 // =======================
 model users {
   id                 String          @id
+  username           String          @unique
   first_name         String
   last_name          String
   middle_name        String?
