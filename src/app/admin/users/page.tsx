@@ -1,118 +1,74 @@
-'use client';
+"use client"
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react"
 
-export default function UserManagementPage() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/admin/users');
-      const data = await res.json();
-      setUsers(data);
-    } catch (err) {
-      console.error("Error loading users:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAction = async (id: string, action: string) => {
-    try {
-      let body: any = {};
-      if (action === "toggleActive") {
-        const user = users.find((u) => u.id === id);
-        body.is_active = !user.is_active;
-      } else if (action === "resetCoins") {
-        body.resetCoins = true;
-      } else if (action === "cancelDeletion") {
-        body.cancelDeletion = true;
-      }
-
-      await fetch(`/api/admin/users/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      fetchUsers(); // refresh
-    } catch (err) {
-      console.error("Action failed:", err);
-    }
-  };
+export default function AdminUsersPage() {
+  const [users, setUsers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    fetch("/api/admin/users")
+      .then((res) => res.json())
+      .then((data) => setUsers(data))
+      .finally(() => setLoading(false))
+  }, [])
 
-  if (loading) return <p className="text-center mt-4">Loading users...</p>;
+  async function approveDeletion(id: string) {
+    if (!confirm("Are you sure you want to permanently delete this user?")) return
+
+    const res = await fetch(`/api/admin/users/${id}/approve-deletion`, {
+      method: "POST",
+    })
+
+    if (res.ok) {
+      setUsers((prev) => prev.filter((u) => u.id !== id)) // remove from UI
+    } else {
+      alert("Failed to approve deletion")
+    }
+  }
+
+  if (loading) return <p>Loading users…</p>
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">User Management</h1>
-      <table className="min-w-full border border-gray-600 text-sm">
-        <thead className="bg-gray-800 text-white">
-          <tr>
-            <th className="border px-2 py-1">ID</th>
-            <th className="border px-2 py-1">Name</th>
-            <th className="border px-2 py-1">Email</th>
-            <th className="border px-2 py-1">Active</th>
-            <th className="border px-2 py-1">Coins</th>
-            <th className="border px-2 py-1">Deletion Req</th>
-            <th className="border px-2 py-1">Actions</th>
+    <div>
+      <h1 className="text-2xl font-semibold mb-4">User Management</h1>
+      <table className="table-auto border-collapse border border-gray-400 w-full">
+        <thead>
+          <tr className="bg-gray-100">
+            <th className="border px-4 py-2">ID</th>
+            <th className="border px-4 py-2">First Name</th>
+            <th className="border px-4 py-2">Last Name</th>
+            <th className="border px-4 py-2">Email</th>
+            <th className="border px-4 py-2">Deletion Requested</th>
+            <th className="border px-4 py-2">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {users.length === 0 ? (
-            <tr>
-              <td colSpan={7} className="text-center py-4">
-                No users found
+          {users.map((u) => (
+            <tr key={u.id}>
+              <td className="border px-4 py-2">{u.id}</td>
+              <td className="border px-4 py-2">{u.first_name}</td>
+              <td className="border px-4 py-2">{u.last_name}</td>
+              <td className="border px-4 py-2">{u.email ?? "—"}</td>
+              <td className="border px-4 py-2">
+                {u.deletion_req ? new Date(u.deletion_req).toLocaleString() : "No"}
+              </td>
+              <td className="border px-4 py-2">
+                {u.deletion_req ? (
+                  <button
+                    onClick={() => approveDeletion(u.id)}
+                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    Approve Deletion
+                  </button>
+                ) : (
+                  "—"
+                )}
               </td>
             </tr>
-          ) : (
-            users.map((u) => (
-              <tr key={u.id} className="border">
-                <td className="border px-2 py-1">{u.id}</td>
-                <td className="border px-2 py-1">
-                  {u.first_name} {u.last_name}
-                </td>
-                <td className="border px-2 py-1">{u.email}</td>
-                <td className="border px-2 py-1">
-                  {u.is_active ? "✅" : "❌"}
-                </td>
-                <td className="border px-2 py-1">{u.coins}</td>
-                <td className="border px-2 py-1">
-                  {u.deletion_req ? u.deletion_req : "—"}
-                </td>
-                <td className="border px-2 py-1 space-x-2">
-                  <button
-                    onClick={() => handleAction(u.id, "toggleActive")}
-                    className="px-2 py-1 bg-blue-500 text-white rounded"
-                  >
-                    {u.is_active ? "Deactivate" : "Activate"}
-                  </button>
-                  <button
-                    onClick={() => handleAction(u.id, "resetCoins")}
-                    className="px-2 py-1 bg-yellow-500 text-white rounded"
-                  >
-                    Reset Coins
-                  </button>
-                  {u.deletion_req && (
-                    <button
-                      onClick={() => handleAction(u.id, "cancelDeletion")}
-                      className="px-2 py-1 bg-red-500 text-white rounded"
-                    >
-                      Cancel Deletion
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))
-          )}
+          ))}
         </tbody>
       </table>
     </div>
-  );
+  )
 }
