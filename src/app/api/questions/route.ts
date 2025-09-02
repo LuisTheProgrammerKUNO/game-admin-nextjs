@@ -1,16 +1,43 @@
-import { NextResponse } from 'next/server'
-import prisma from '@lib/prisma'
+// app/api/questions/route.ts
+import { NextResponse } from "next/server";
+import prisma from "@lib/prisma";
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
-  await prisma.question.delete({ where: { question_id: Number(params.id) } })
-  return NextResponse.json({ ok: true })
+// GET /api/questions → list all questions
+export async function GET() {
+  try {
+    const questions = await prisma.question.findMany({
+      include: { module: true, answers: true },
+    });
+    return NextResponse.json(questions ?? []);
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message ?? "Failed to fetch questions" },
+      { status: 500 }
+    );
+  }
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  const { module_id, type, text } = await req.json()
-  const q = await prisma.question.update({
-    where: { question_id: Number(params.id) },
-    data: { module_id, type, text },
-  })
-  return NextResponse.json(q)
+// POST /api/questions → create a new question
+export async function POST(req: Request) {
+  try {
+    const { module_id, type, text } = await req.json();
+
+    if (!module_id || !type || !text) {
+      return NextResponse.json(
+        { error: "module_id, type, and text are required" },
+        { status: 400 }
+      );
+    }
+
+    const q = await prisma.question.create({
+      data: { module_id, type, text },
+    });
+
+    return NextResponse.json(q, { status: 201 });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message ?? "Failed to create question" },
+      { status: 500 }
+    );
+  }
 }

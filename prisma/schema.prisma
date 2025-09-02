@@ -5,13 +5,9 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["neon_auth", "public", "modules_schema"]
+  schemas  = ["modules_schema", "neon_auth", "public"]
 }
 
-//
-// =======================
-//  NEON AUTH MIRROR
-// =======================
 model users_sync {
   raw_json   Json
   id         String    @id @default(dbgenerated("(raw_json ->> 'id'::text)"))
@@ -20,17 +16,12 @@ model users_sync {
   created_at DateTime? @default(dbgenerated("to_timestamp((trunc((((raw_json ->> 'signed_up_at_millis'::text))::bigint)::double precision) / (1000)::double precision))")) @db.Timestamptz(6)
   updated_at DateTime? @db.Timestamptz(6)
   deleted_at DateTime? @db.Timestamptz(6)
-
   users      users?
 
   @@index([deleted_at])
   @@schema("neon_auth")
 }
 
-//
-// =======================
-//  APP USERS + TRANSACTIONS
-// =======================
 model users {
   id                 String         @id
   first_name         String
@@ -43,9 +34,8 @@ model users {
   deletion_req       DateTime?      @db.Timestamptz(6)
   stripe_customer_id String?        @unique
   coins              Int?           @default(0)
-
-  transactions transactions[]
-  users_sync    users_sync @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  transactions       transactions[]
+  users_sync         users_sync     @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@schema("public")
 }
@@ -65,20 +55,14 @@ model transactions {
   created_at        DateTime? @default(now()) @db.Timestamptz(6)
   product_id        String?
   product_name      String?
-
-  users users @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users             users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@schema("public")
 }
 
-//
-// =======================
-//  MODULES / QUESTIONS
-// =======================
 model Module {
   module_id Int        @id @default(autoincrement())
   name      String     @db.VarChar(100)
-
   questions Question[] @relation("ModuleQuestions")
 
   @@map("modules")
@@ -90,10 +74,9 @@ model Question {
   module_id   Int
   type        QuestionType
   text        String
-
+  explanation String?
   answers     Answer[]     @relation("QuestionAnswers")
-
-  module Module @relation("ModuleQuestions", fields: [module_id], references: [module_id], onDelete: Cascade)
+  module      Module       @relation("ModuleQuestions", fields: [module_id], references: [module_id], onDelete: Cascade)
 
   @@map("questions")
   @@schema("modules_schema")
@@ -104,8 +87,7 @@ model Answer {
   question_id Int
   text        String   @db.VarChar(255)
   is_correct  Boolean  @default(false)
-
-  question Question @relation("QuestionAnswers", fields: [question_id], references: [question_id], onDelete: Cascade)
+  question    Question @relation("QuestionAnswers", fields: [question_id], references: [question_id], onDelete: Cascade)
 
   @@map("answers")
   @@schema("modules_schema")
