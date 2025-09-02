@@ -5,23 +5,38 @@ export async function GET() {
   try {
     const users = await prisma.users.findMany({
       select: {
-        id: true, first_name: true, last_name: true, middle_name: true,
-        school: true, birthday: true, location: true, is_active: true,
-        deletion_req: true, coins: true, stripe_customer_id: true,
-        users_sync: { select: { email: true, created_at: true } },
+        id: true,
+        first_name: true,
+        last_name: true,
+        middle_name: true,
+        school: true,
+        birthday: true,
+        location: true,
+        is_active: true,
+        deletion_req: true,
+        stripe_customer_id: true,
+        coins: true,
+        users_sync: {
+          select: {
+            email: true,
+            created_at: true, // signup date from sync
+          },
+        },
       },
-      orderBy: { id: 'asc' },
     })
 
-    const formatted = users.map(u => ({
+    const mapped = users.map((u) => ({
       ...u,
       email: u.users_sync?.email ?? null,
-      signup_at: u.users_sync?.created_at?.toISOString() ?? null,
+      created_at: u.users_sync?.created_at ?? null,
     }))
 
-    return NextResponse.json(formatted)
-  } catch (err) {
-    console.error('GET /api/admin/users error', err)
-    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 })
+    return NextResponse.json(mapped)
+  } catch (err: any) {
+    console.error('Error fetching users:', err)
+    return NextResponse.json(
+      { error: 'Failed to fetch users' },
+      { status: 500 }
+    )
   }
 }

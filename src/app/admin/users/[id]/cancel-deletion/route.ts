@@ -19,20 +19,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not found in users_sync' }, { status: 404 })
     }
 
-    // 2️⃣ Mark deletion request in public.users using the linked ID
-    const updated = await prisma.users.update({
+    // 2️⃣ Clear deletion_req in public.users using the linked ID
+    await prisma.users.update({
       where: { id: syncUser.id },
-      data: { deletion_req: new Date() },
-      select: { id: true, deletion_req: true },
+      data: { deletion_req: null },
     })
 
-    return NextResponse.json({
-      ok: true,
-      message: `Deletion requested for ${email}`,
-      user: updated,
-    })
+    return NextResponse.json({ ok: true, message: `Deletion request canceled for ${email}` })
   } catch (err: any) {
-    console.error('Request deletion error:', err)
-    return NextResponse.json({ error: 'Failed to request deletion' }, { status: 500 })
+    console.error('Cancel deletion error:', err)
+    return NextResponse.json({ error: 'Failed to cancel deletion' }, { status: 500 })
   }
 }
