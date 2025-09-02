@@ -1,24 +1,16 @@
 import { NextResponse } from 'next/server'
-import prisma from '@lib/prisma';
-import { QuestionType } from '@prisma/client'
+import prisma from '@lib/prisma'
 
-export async function GET() {
-  const items = await prisma.question.findMany({
-    orderBy: { question_id: 'asc' },
-    include: { module: true, answers: true },
-  })
-  return NextResponse.json(items)
+export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+  await prisma.question.delete({ where: { question_id: Number(params.id) } })
+  return NextResponse.json({ ok: true })
 }
 
-export async function POST(req: Request) {
-  const b = await req.json().catch(() => ({}))
-  const { module_id, type, text } = b || {}
-  if (!module_id || !text || !type) {
-    return NextResponse.json({ error: 'module_id, type, text required' }, { status: 400 })
-  }
-  if (!Object.values(QuestionType).includes(type)) {
-    return NextResponse.json({ error: `type must be one of ${Object.values(QuestionType).join(', ')}` }, { status: 400 })
-  }
-  const created = await prisma.question.create({ data: { module_id, type, text } })
-  return NextResponse.json(created, { status: 201 })
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+  const { module_id, type, text } = await req.json()
+  const q = await prisma.question.update({
+    where: { question_id: Number(params.id) },
+    data: { module_id, type, text },
+  })
+  return NextResponse.json(q)
 }

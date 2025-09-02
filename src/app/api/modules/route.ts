@@ -1,23 +1,14 @@
-// src/app/api/modules/route.ts
 import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
-
 export async function GET() {
-  const data = await prisma.module.findMany({ orderBy: { module_id: 'asc' } })
-  return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } })
+  const modules = await prisma.module.findMany({ orderBy: { module_id: 'asc' } })
+  return NextResponse.json(modules)
 }
 
 export async function POST(req: Request) {
-  const body = await req.json().catch(() => null)
-  const name = typeof body?.name === 'string' ? body.name.trim() : ''
-  if (!name) return NextResponse.json({ error: 'name is required' }, { status: 400 })
-
-  const created = await prisma.module.create({ data: { name } })
-  return NextResponse.json(created, {
-    status: 201,
-    headers: { 'Cache-Control': 'no-store' },
-  })
+  const { name } = await req.json()
+  if (!name) return NextResponse.json({ error: 'name required' }, { status: 400 })
+  const mod = await prisma.module.create({ data: { name } })
+  return NextResponse.json(mod, { status: 201 })
 }

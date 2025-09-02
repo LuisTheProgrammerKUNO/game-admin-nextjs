@@ -1,24 +1,12 @@
-// src/app/api/admin/users/[id]/approve-deletion/route.ts
-import { NextResponse } from "next/server"
-import prisma from "@lib/prisma"
+import { NextResponse } from 'next/server'
+import prisma from '@lib/prisma'
 
-export async function POST(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
-  const id = params.id
-
+export async function POST(_req: Request, { params }: { params: { id: string } }) {
   try {
-    await prisma.users.delete({
-      where: { id },
-    })
-
+    await prisma.users.delete({ where: { id: params.id } })
     return NextResponse.json({ ok: true })
-  } catch (err: any) {
-    console.error("Approve deletion error:", err)
-    return NextResponse.json(
-      { error: "Failed to approve deletion" },
-      { status: 500 }
-    )
+  } catch (err) {
+    console.error('approve-deletion error', err)
+    return NextResponse.json({ error: 'Failed to approve deletion' }, { status: 500 })
   }
 }

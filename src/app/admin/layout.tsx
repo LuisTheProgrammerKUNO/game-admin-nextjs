@@ -1,25 +1,18 @@
-// src/app/admin/layout.tsx
 import { Suspense, ReactNode } from 'react'
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <>
-      <nav className="nav-bar font-sans grid grid-cols-[repeat(auto-fit,minmax(0,1fr))] bg-white text-black text-center [&_a]:py-3 [&_a]:border-0 [&_a]:hover:text-white [&_a]:hover:bg-black">
-        <a href="/admin">Dashboard</a>
-        <a href="/admin/modules">Modules</a>
-        <a href="/admin/users">User Management</a>
-        <a href="/admin/questions">Questions</a>
-        <a href="/admin/answers">Answers</a>
-        <a href="/admin/pending-users">Pending Account Deletion Requests</a>
+    <div className="p-4">
+      <nav className="flex gap-4 mb-6 text-sm">
+        <a className="underline" href="/admin">Dashboard</a>
+        <a className="underline" href="/admin/users">Users</a>
+        <a className="underline" href="/admin/modules">Modules</a>
+        <a className="underline" href="/admin/questions">Questions</a>
+        <a className="underline" href="/admin/answers">Answers</a>
+        <a className="underline" href="/request-deletion">Request Deletion (test)</a>
       </nav>
-      <div className="px-10 py-5 w-screen">
 
-        <Suspense fallback={<div className="p-[30px] text-sm opacity-70">Loading…</div>}>
-          <div className="py-[30px] text-sm">
-            {children}
-          </div>
-        </Suspense>
-      </div>
-    </>
+      <Suspense fallback={<div className="opacity-70">Loading…</div>}>{children}</Suspense>
+    </div>
   )
 }

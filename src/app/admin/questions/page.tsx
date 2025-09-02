@@ -1,130 +1,60 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
-import type { Question, Module } from '@prisma/client'
-import { QuestionType } from '@prisma/client'
+import { useEffect, useState } from 'react'
 
-type QuestionWith = Question & { module?: Module | null }
+type Module = { module_id: number; name: string }
+type Question = { question_id: number; module_id: number; type: 'mul_choice'|'fill_blank'|'identification'; text: string; module?: Module }
 
 export default function QuestionsPage() {
-  const [modules, setModules] = useState<Module[]>([])
-  const [items, setItems] = useState<QuestionWith[]>([])
-  const [module_id, setModuleId] = useState<number | ''>('')
+  const [mods, setMods] = useState<Module[]>([])
+  const [items, setItems] = useState<Question[]>([])
+  const [moduleId, setModuleId] = useState<number | ''>('')
+  const [type, setType] = useState<Question['type']>('mul_choice')
   const [text, setText] = useState('')
-  const [type, setType] = useState<QuestionType>(QuestionType.mul_choice)
-
-  const types = useMemo(() => Object.values(QuestionType), [])
 
   const load = async () => {
-    const [ms, qs] = await Promise.all([
-      fetch('/api/modules').then(r => r.json()),
-      fetch('/api/questions').then(r => r.json()),
-    ])
-    setModules(ms)
-    setItems(qs)
+    const r1 = await fetch('/api/modules'); setMods(await r1.json())
+    const r2 = await fetch('/api/questions'); setItems(await r2.json())
   }
   useEffect(() => { load() }, [])
 
-  const create = async () => {
-    if (!module_id || !text.trim()) return
-    await fetch('/api/questions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ module_id, text, type }),
-    })
-    setText('')
-    setModuleId('')
-    setType(QuestionType.mul_choice)
+  const add = async () => {
+    if (!moduleId || !text.trim()) return
+    await fetch('/api/questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ module_id: moduleId, type, text }) })
+    setText(''); setType('mul_choice'); setModuleId('')
     load()
   }
-
-  const remove = async (id: number) => {
-    if (!confirm('Delete question?')) return
-    await fetch(`/api/questions/${id}`, { method: 'DELETE' })
-    load()
-  }
+  const del = async (id: number) => { await fetch(`/api/questions/${id}`, { method: 'DELETE' }); load() }
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Questions</h2>
+      <h1 className="text-2xl font-semibold mb-4">Questions</h1>
 
-      <div className="grid md:grid-cols-4 gap-2 mb-4">
-        {/* Module dropdown (styled for light/dark) */}
-        <select
-          className="border rounded px-2 py-1 bg-white text-black dark:bg-gray-800 dark:text-white"
-          value={module_id}
-          onChange={e => setModuleId(e.target.value ? Number(e.target.value) : '')}
-        >
+      <div className="flex gap-2 mb-4">
+        <select className="px-3 py-2 rounded border bg-black/20" value={moduleId} onChange={e => setModuleId(Number(e.target.value))}>
           <option value="">— Choose a module —</option>
-          {modules.map(m => (
-            <option key={m.module_id} value={m.module_id}>
-              {m.name}
-            </option>
-          ))}
+          {mods.map(m => <option key={m.module_id} value={m.module_id}>{m.name}</option>)}
         </select>
 
-        {/* Type dropdown (styled) */}
-        <select
-          className="border rounded px-2 py-1 bg-white text-black dark:bg-gray-800 dark:text-white"
-          value={type}
-          onChange={e => setType(e.target.value as QuestionType)}
-        >
-          {types.map(t => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
+        <select className="px-3 py-2 rounded border bg-black/20" value={type} onChange={e => setType(e.target.value as any)}>
+          <option value="mul_choice">mul_choice</option>
+          <option value="fill_blank">fill_blank</option>
+          <option value="identification">identification</option>
         </select>
 
-        {/* Question text */}
-        <input
-          className="border rounded px-2 py-1 md:col-span-2 bg-white text-black dark:bg-gray-800 dark:text-white"
-          value={text}
-          onChange={e => setText(e.target.value)}
-          placeholder="Question text"
-        />
+        <input className="flex-1 px-3 py-2 rounded border bg-black/20" placeholder="Question text" value={text} onChange={e => setText(e.target.value)} />
+        <button className="px-4 py-2 rounded bg-blue-600" onClick={add}>Add Question</button>
       </div>
 
-      <button className="border px-3 py-1 rounded mb-6" onClick={create}>
-        Add Question
-      </button>
-
-      <div className="overflow-x-auto">
-        <table className="min-w-[720px] border-collapse">
-          <thead>
-            <tr className="[&_th]:text-left [&_th]:px-2 [&_th]:py-2 border-b">
-              <th>#</th>
-              <th>Module</th>
-              <th>Type</th>
-              <th>Text</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody className="[&_td]:px-2 [&_td]:py-2">
-            {items.map(q => (
-              <tr key={q.question_id} className="border-b">
-                <td className="tabular-nums">{q.question_id}</td>
-                <td>{q.module?.name ?? q.module_id}</td>
-                <td className="uppercase text-xs tracking-wide opacity-70">{q.type}</td>
-                <td className="truncate max-w-[520px]">{q.text}</td>
-                <td className="whitespace-nowrap">
-                  <a
-                    className="underline mr-3"
-                    href={`/admin/answers?question_id=${q.question_id}`}
-                  >
-                    Answers
-                  </a>
-                  <button
-                    className="border px-2 py-0.5 rounded"
-                    onClick={() => remove(q.question_id)}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ul className="space-y-2">
+        {items.map(q => (
+          <li key={q.question_id} className="flex items-center justify-between border rounded px-3 py-2">
+            <div>
+              #{q.question_id} — [{q.type}] {q.text} <span className="opacity-70">({q.module?.name ?? q.module_id})</span>
+            </div>
+            <button className="px-3 py-1 rounded bg-red-600" onClick={() => del(q.question_id)}>Delete</button>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
