@@ -1,3 +1,4 @@
+// src/app/api/admin/users/approve-deletion/route.ts
 import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 
@@ -9,7 +10,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
-    // 1️⃣ Find the user in users_sync using email
+    // 1️⃣ Look up user in users_sync by email
     const syncUser = await prisma.users_sync.findFirst({
       where: { email },
       select: { id: true },
@@ -19,20 +20,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not found in users_sync' }, { status: 404 })
     }
 
-    // 2️⃣ Mark deletion request in public.users using the linked ID
-    const updated = await prisma.users.update({
+    // 2️⃣ Permanently delete from public.users
+    await prisma.users.delete({
       where: { id: syncUser.id },
-      data: { deletion_req: new Date() },
-      select: { id: true, deletion_req: true },
     })
 
     return NextResponse.json({
       ok: true,
-      message: `Deletion requested for ${email}`,
-      user: updated,
+      message: `User with email ${email} has been permanently deleted.`,
     })
   } catch (err: any) {
-    console.error('Request deletion error:', err)
-    return NextResponse.json({ error: 'Failed to request deletion' }, { status: 500 })
+    console.error('Approve deletion error:', err)
+    return NextResponse.json({ error: 'Failed to approve deletion' }, { status: 500 })
   }
 }

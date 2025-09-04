@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@lib/prisma";
+import { NextResponse } from 'next/server'
+import prisma from '@lib/prisma'
 
 export async function GET() {
   try {
@@ -14,26 +14,29 @@ export async function GET() {
         location: true,
         is_active: true,
         deletion_req: true,
+        stripe_customer_id: true,
         coins: true,
-
-        // pull email from users_sync relation
         users_sync: {
-          select: { email: true, name: true },
+          select: {
+            email: true,
+            created_at: true, // signup date from sync
+          },
         },
       },
-    });
+    })
 
-    // flatten email so frontend can read `user.email`
-    const formatted = users.map((u) => ({
+    const mapped = users.map((u) => ({
       ...u,
       email: u.users_sync?.email ?? null,
-      sync_name: u.users_sync?.name ?? null, // flatten name too
-      coins: u.coins ?? 0,
-    }));
+      created_at: u.users_sync?.created_at ?? null,
+    }))
 
-    return NextResponse.json(formatted);
+    return NextResponse.json(mapped)
   } catch (err: any) {
-    console.error("Error fetching users:", err);
-    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+    console.error('Error fetching users:', err)
+    return NextResponse.json(
+      { error: 'Failed to fetch users' },
+      { status: 500 }
+    )
   }
 }

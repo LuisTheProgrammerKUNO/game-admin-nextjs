@@ -1,23 +1,24 @@
-// src/app/api/modules/route.ts
-import { NextResponse } from 'next/server'
-import prisma from '@lib/prisma'
-
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
+import { NextResponse } from "next/server";
+import prisma from "@lib/prisma";
 
 export async function GET() {
-  const data = await prisma.module.findMany({ orderBy: { module_id: 'asc' } })
-  return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } })
-}
+  try {
+    const modules = await prisma.module.findMany({
+      orderBy: { module_id: "asc" },
+      include: {
+        questions: {
+          orderBy: { question_id: "asc" },
+          include: { answers: { orderBy: { answer_id: "asc" } } },
+        },
+      },
+    });
 
-export async function POST(req: Request) {
-  const body = await req.json().catch(() => null)
-  const name = typeof body?.name === 'string' ? body.name.trim() : ''
-  if (!name) return NextResponse.json({ error: 'name is required' }, { status: 400 })
-
-  const created = await prisma.module.create({ data: { name } })
-  return NextResponse.json(created, {
-    status: 201,
-    headers: { 'Cache-Control': 'no-store' },
-  })
+    return NextResponse.json(modules);
+  } catch (error: any) {
+    console.error("❌ Error fetching modules:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch modules" },
+      { status: 500 }
+    );
+  }
 }
