@@ -40,43 +40,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-import { NextResponse } from "next/server";
-import prisma from "@lib/prisma";
-import { QuestionType } from "@prisma/client";
-
-export async function POST(req: Request) {
-  try {
-    const { module_id, type, text } = await req.json();
-
-    if (!module_id) {
-      return NextResponse.json(
-        { error: "module_id is required" },
-        { status: 400 }
-      );
-    }
-    if (!text || !text.trim()) {
-      return NextResponse.json(
-        { error: "Question text is required" },
-        { status: 400 }
-      );
-    }
-
-    const allowed = ["mul_choice", "fill_blank", "identification"] as const;
-    const picked: QuestionType =
-      allowed.includes(type) ? (type as QuestionType) : "mul_choice";
-
-    const question = await prisma.question.create({
-      data: {
-        module_id: Number(module_id),
-        type: picked,
-        text: text.trim(),
-      },
-      include: { answers: true },
-    });
-
-    return NextResponse.json(question);
-  } catch (err) {
-    console.error("Error creating question:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
-  }
 }
