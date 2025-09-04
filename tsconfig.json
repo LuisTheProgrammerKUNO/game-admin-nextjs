@@ -29,6 +29,9 @@
       ],
       "@lib/*": [
         "lib/*"
+      ],
+      "@components/*": [
+        "./src/app/components/*"
       ]
     }
   },
