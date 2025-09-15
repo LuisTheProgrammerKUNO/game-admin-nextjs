@@ -25,15 +25,15 @@ type Module = {
 
 type Props = {
   modules: Module[]
-  onAdd: (name: string) => void
-  onEdit: (id: number, name: string) => void
-  onDelete: (id: number) => void
-  onAddQuestion: (module_id: number, type: string, text: string) => void
-  onEditQuestion: (id: number, type: string, text: string) => void
-  onDeleteQuestion: (id: number) => void
-  onAddAnswer: (question_id: number, text: string, is_correct: boolean) => void
-  onEditAnswer: (id: number, text: string, is_correct: boolean) => void
-  onDeleteAnswer: (id: number) => void
+  onAdd: (name: string) => Promise<void>
+  onEdit: (id: number, name: string) => Promise<void>
+  onDelete: (id: number) => Promise<void>
+  onAddQuestion: (module_id: number, type: string, text: string) => Promise<void>
+  onEditQuestion: (id: number, type: string, text: string) => Promise<void>
+  onDeleteQuestion: (id: number) => Promise<void>
+  onAddAnswer: (question_id: number, text: string, is_correct: boolean) => Promise<void>
+  onEditAnswer: (id: number, text: string, is_correct: boolean) => Promise<void>
+  onDeleteAnswer: (id: number) => Promise<void>
 }
 
 export default function ModuleList({
@@ -48,11 +48,9 @@ export default function ModuleList({
   onEditAnswer,
   onDeleteAnswer,
 }: Props) {
-  // Add Module modal
   const [addOpen, setAddOpen] = useState(false)
   const [newName, setNewName] = useState('')
 
-  // Edit Module modal
   const [editOpen, setEditOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editName, setEditName] = useState('')
@@ -99,7 +97,7 @@ export default function ModuleList({
             </button>
             <button
               className="bg-red-600 text-white px-3 py-1 rounded"
-              onClick={() => onDelete(m.module_id)}
+              onClick={async () => await onDelete(m.module_id)}
             >
               Delete
             </button>
@@ -107,14 +105,13 @@ export default function ModuleList({
         </div>
       ))}
 
-      {/* Add Module Modal */}
       <Modal
         isOpen={addOpen}
         title="Add Module"
         onClose={() => setAddOpen(false)}
-        onSave={() => {
+        onSave={async () => {
           if (newName.trim()) {
-            onAdd(newName.trim())
+            await onAdd(newName.trim())
             setAddOpen(false)
           }
         }}
@@ -127,14 +124,13 @@ export default function ModuleList({
         />
       </Modal>
 
-      {/* Edit Module Modal */}
       <Modal
         isOpen={editOpen}
         title="Edit Module"
         onClose={() => setEditOpen(false)}
-        onSave={() => {
+        onSave={async () => {
           if (editingId !== null && editName.trim()) {
-            onEdit(editingId, editName.trim())
+            await onEdit(editingId, editName.trim())
             setEditOpen(false)
           }
         }}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import ModuleList from '@components/ModuleList'
+import ModuleList from '@/app/components/ModuleList'
 
 export default function AdminContentPage() {
   const [modules, setModules] = useState<any[]>([])
@@ -30,7 +30,7 @@ export default function AdminContentPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name }),
     })
-    fetchData()
+    await fetchData()
   }
 
   const editModule = async (id: number, name: string) => {
@@ -39,12 +39,12 @@ export default function AdminContentPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name }),
     })
-    fetchData()
+    await fetchData()
   }
 
   const deleteModule = async (id: number) => {
     await fetch(`/api/modules/${id}`, { method: 'DELETE' })
-    fetchData()
+    await fetchData()
   }
 
   // Question CRUD
@@ -54,7 +54,7 @@ export default function AdminContentPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ module_id, type, text }),
     })
-    fetchData()
+    await fetchData()
   }
 
   const editQuestion = async (id: number, type: string, text: string) => {
@@ -63,12 +63,12 @@ export default function AdminContentPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type, text }),
     })
-    fetchData()
+    await fetchData()
   }
 
   const deleteQuestion = async (id: number) => {
     await fetch(`/api/questions/${id}`, { method: 'DELETE' })
-    fetchData()
+    await fetchData()
   }
 
   // Answer CRUD
@@ -78,7 +78,7 @@ export default function AdminContentPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question_id, text, is_correct }),
     })
-    fetchData()
+    await fetchData()
   }
 
   const editAnswer = async (id: number, text: string, is_correct: boolean) => {
@@ -87,12 +87,12 @@ export default function AdminContentPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, is_correct }),
     })
-    fetchData()
+    await fetchData()
   }
 
   const deleteAnswer = async (id: number) => {
     await fetch(`/api/answers/${id}`, { method: 'DELETE' })
-    fetchData()
+    await fetchData()
   }
 
   if (loading) return <div className="p-4">Loading content...</div>

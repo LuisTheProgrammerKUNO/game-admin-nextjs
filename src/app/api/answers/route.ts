@@ -1,29 +1,25 @@
-import { NextResponse } from "next/server";
-import prisma from "@lib/prisma";
+import { NextResponse } from 'next/server'
+import prisma from '@lib/prisma'
 
 export async function POST(req: Request) {
-  const { question_id, text, is_correct } = await req.json();
+  try {
+    const { question_id, text, is_correct } = await req.json()
+    if (!text?.trim()) {
+      return NextResponse.json({ error: 'Answer text required' }, { status: 400 })
+    }
 
-  if (!question_id) {
-    return NextResponse.json(
-      { error: "question_id is required" },
-      { status: 400 }
-    );
+    await prisma.answer.create({
+      data: { question_id, text: text.trim(), is_correct },
+    })
+
+    const modules = await prisma.module.findMany({
+      orderBy: { module_id: 'asc' },
+      include: { questions: { include: { answers: true } } },
+    })
+
+    return NextResponse.json(modules)
+  } catch (err) {
+    console.error('Error creating answer:', err)
+    return NextResponse.json({ error: 'Failed to create answer' }, { status: 500 })
   }
-  if (!text || !text.trim()) {
-    return NextResponse.json(
-      { error: "Answer text is required" },
-      { status: 400 }
-    );
-  }
-
-  const answer = await prisma.answer.create({
-    data: {
-      question_id: Number(question_id),
-      text: text.trim(),
-      is_correct: Boolean(is_correct),
-    },
-  });
-
-  return NextResponse.json(answer);
 }

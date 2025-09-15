@@ -20,12 +20,12 @@ type Question = {
 type Props = {
   questions?: Question[]
   moduleId: number
-  onAdd: (module_id: number, type: string, text: string) => void
-  onEdit: (id: number, type: string, text: string) => void
-  onDelete: (id: number) => void
-  onAddAnswer: (question_id: number, text: string, is_correct: boolean) => void
-  onEditAnswer: (id: number, text: string, is_correct: boolean) => void
-  onDeleteAnswer: (id: number) => void
+  onAdd: (module_id: number, type: string, text: string) => Promise<void>
+  onEdit: (id: number, type: string, text: string) => Promise<void>
+  onDelete: (id: number) => Promise<void>
+  onAddAnswer: (question_id: number, text: string, is_correct: boolean) => Promise<void>
+  onEditAnswer: (id: number, text: string, is_correct: boolean) => Promise<void>
+  onDeleteAnswer: (id: number) => Promise<void>
 }
 
 const QUESTION_TYPES = [
@@ -44,12 +44,10 @@ export default function QuestionList({
   onEditAnswer,
   onDeleteAnswer,
 }: Props) {
-  // Add modal
   const [addOpen, setAddOpen] = useState(false)
   const [newType, setNewType] = useState('mul_choice')
   const [newText, setNewText] = useState('')
 
-  // Edit modal
   const [editOpen, setEditOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editType, setEditType] = useState('mul_choice')
@@ -86,7 +84,7 @@ export default function QuestionList({
               </button>
               <button
                 className="bg-red-600 text-white px-3 py-1 rounded"
-                onClick={() => onDelete(q.question_id)}
+                onClick={async () => await onDelete(q.question_id)}
               >
                 Delete
               </button>
@@ -106,14 +104,13 @@ export default function QuestionList({
         + Add Question
       </button>
 
-      {/* Add Question Modal */}
       <Modal
         isOpen={addOpen}
         title="Add question"
         onClose={() => setAddOpen(false)}
-        onSave={() => {
+        onSave={async () => {
           if (newText.trim()) {
-            onAdd(moduleId, newType, newText.trim())
+            await onAdd(moduleId, newType, newText.trim())
             setAddOpen(false)
           }
         }}
@@ -138,14 +135,13 @@ export default function QuestionList({
         />
       </Modal>
 
-      {/* Edit Question Modal */}
       <Modal
         isOpen={editOpen}
         title="Edit question"
         onClose={() => setEditOpen(false)}
-        onSave={() => {
+        onSave={async () => {
           if (editingId !== null && editText.trim()) {
-            onEdit(editingId, editType, editText.trim())
+            await onEdit(editingId, editType, editText.trim())
             setEditOpen(false)
           }
         }}

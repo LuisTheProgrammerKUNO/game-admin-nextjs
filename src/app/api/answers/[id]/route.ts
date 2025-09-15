@@ -1,24 +1,38 @@
-import { NextResponse } from "next/server";
-import prisma from "@lib/prisma";
+import { NextResponse } from 'next/server'
+import prisma from '@lib/prisma'
 
-export async function PUT(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
-  const { id } = await context.params;
-  const { text, is_correct } = await req.json();
+export async function PUT(req: Request, { params }: { params: { id: string } }) {
+  try {
+    const { text, is_correct } = await req.json()
+    await prisma.answer.update({
+      where: { answer_id: Number(params.id) },
+      data: { text, is_correct },
+    })
 
-  if (!text || !text.trim()) {
-    return NextResponse.json(
-      { error: "Answer text is required" },
-      { status: 400 }
-    );
+    const modules = await prisma.module.findMany({
+      orderBy: { module_id: 'asc' },
+      include: { questions: { include: { answers: true } } },
+    })
+
+    return NextResponse.json(modules)
+  } catch (err) {
+    console.error('Error updating answer:', err)
+    return NextResponse.json({ error: 'Failed to update answer' }, { status: 500 })
   }
+}
 
-  const answer = await prisma.answer.update({
-    where: { answer_id: Number(id) },
-    data: { text: text.trim(), is_correct: Boolean(is_correct) },
-  });
+export async function DELETE(_: Request, { params }: { params: { id: string } }) {
+  try {
+    await prisma.answer.delete({ where: { answer_id: Number(params.id) } })
 
-  return NextResponse.json(answer);
+    const modules = await prisma.module.findMany({
+      orderBy: { module_id: 'asc' },
+      include: { questions: { include: { answers: true } } },
+    })
+
+    return NextResponse.json(modules)
+  } catch (err) {
+    console.error('Error deleting answer:', err)
+    return NextResponse.json({ error: 'Failed to delete answer' }, { status: 500 })
+  }
 }

@@ -10,97 +10,73 @@ type Answer = {
 }
 
 type Props = {
-  /** The parent question id this list belongs to */
   questionId: number
   answers: Answer[]
-  onAdd: (question_id: number, text: string, is_correct: boolean) => void | Promise<void>
-  onEdit: (id: number, text: string, is_correct: boolean) => void | Promise<void>
-  onDelete: (id: number) => void | Promise<void>
+  onAdd: (question_id: number, text: string, is_correct: boolean) => Promise<void>
+  onEdit: (id: number, text: string, is_correct: boolean) => Promise<void>
+  onDelete: (id: number) => Promise<void>
 }
 
-export default function AnswerList({
-  questionId,
-  answers,
-  onAdd,
-  onEdit,
-  onDelete,
-}: Props) {
+export default function AnswerList({ answers, questionId, onAdd, onEdit, onDelete }: Props) {
   const [isAddOpen, setAddOpen] = useState(false)
   const [isEditOpen, setEditOpen] = useState(false)
-  const [selected, setSelected] = useState<Answer | null>(null)
+  const [selectedAnswer, setSelectedAnswer] = useState<Answer | null>(null)
   const [text, setText] = useState('')
   const [isCorrect, setIsCorrect] = useState(false)
 
-  const resetForm = () => {
-    setText('')
-    setIsCorrect(false)
-  }
-
   return (
-    <div className="mt-3">
+    <div>
       <button
-        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded"
+        className="bg-green-600 text-white px-4 py-2 rounded mb-4"
         onClick={() => {
-          resetForm()
+          setText('')
+          setIsCorrect(false)
           setAddOpen(true)
         }}
       >
         + Add Answer
       </button>
 
-      <div className="mt-3 space-y-2">
-        {answers.map((a) => (
-          <div
-            key={a.answer_id}
-            className="border border-gray-700 rounded p-3 flex items-start justify-between"
-          >
-            <div>
-              <p className="leading-tight">
-                {a.text}{' '}
-                {a.is_correct && (
-                  <span className="ml-2 inline-block text-xs px-2 py-0.5 rounded bg-green-700/40 text-green-300 border border-green-700">
-                    correct
-                  </span>
-                )}
-              </p>
-            </div>
-
-            <div className="shrink-0 space-x-2">
-              <button
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
-                onClick={() => {
-                  setSelected(a)
-                  setText(a.text)
-                  setIsCorrect(a.is_correct)
-                  setEditOpen(true)
-                }}
-              >
-                Edit
-              </button>
-              <button
-                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
-                onClick={() => onDelete(a.answer_id)}
-              >
-                Delete
-              </button>
-            </div>
+      {answers.map((a) => (
+        <div key={a.answer_id} className="border border-gray-700 rounded p-4 mb-4">
+          <p>
+            {a.text} {a.is_correct && <span className="text-green-400">(correct)</span>}
+          </p>
+          <div className="space-x-2 mt-2">
+            <button
+              className="bg-blue-600 px-3 py-1 rounded text-white"
+              onClick={() => {
+                setSelectedAnswer(a)
+                setText(a.text)
+                setIsCorrect(a.is_correct)
+                setEditOpen(true)
+              }}
+            >
+              Edit
+            </button>
+            <button
+              className="bg-red-600 px-3 py-1 rounded text-white"
+              onClick={async () => await onDelete(a.answer_id)}
+            >
+              Delete
+            </button>
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
 
-      {/* Add Answer Modal */}
       <Modal
         isOpen={isAddOpen}
         title="Add Answer"
         onClose={() => setAddOpen(false)}
         onSave={async () => {
-          await onAdd(questionId, text.trim(), isCorrect)
-          setAddOpen(false)
-          resetForm()
+          if (text.trim()) {
+            await onAdd(questionId, text, isCorrect)
+            setAddOpen(false)
+          }
         }}
       >
         <input
-          className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 mb-3"
+          className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 mb-2"
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Answer text"
@@ -115,21 +91,19 @@ export default function AnswerList({
         </label>
       </Modal>
 
-      {/* Edit Answer Modal */}
       <Modal
         isOpen={isEditOpen}
         title="Edit Answer"
         onClose={() => setEditOpen(false)}
         onSave={async () => {
-          if (!selected) return
-          await onEdit(selected.answer_id, text.trim(), isCorrect)
-          setEditOpen(false)
-          setSelected(null)
-          resetForm()
+          if (selectedAnswer && text.trim()) {
+            await onEdit(selectedAnswer.answer_id, text, isCorrect)
+            setEditOpen(false)
+          }
         }}
       >
         <input
-          className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 mb-3"
+          className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 mb-2"
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Answer text"

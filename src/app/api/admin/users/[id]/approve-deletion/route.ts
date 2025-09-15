@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 
-// params is a Promise in Next.js 15 route handlers
 export async function POST(
   req: Request,
   ctx: { params: Promise<{ id: string }> }
@@ -10,18 +9,17 @@ export async function POST(
 
   try {
     const user = await prisma.users.findUnique({ where: { id } })
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
+    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
+    // "Approve" = deactivate and clear the request flag
     const updated = await prisma.users.update({
       where: { id },
-      data: { is_active: !Boolean(user.is_active) },
+      data: { is_active: false, deletion_req: null },
     })
 
     return NextResponse.json(updated)
   } catch (e) {
-    console.error('POST /api/admin/users/[id] failed:', e)
+    console.error('approve-deletion failed:', e)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

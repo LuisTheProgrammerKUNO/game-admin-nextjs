@@ -5,7 +5,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     <div className="p-4">
       <nav className="flex gap-4 mb-6 text-sm">
         <a className="underline" href="/admin">Dashboard</a>
-        <a className="underline" href="/admin/content">Modules</a>
+        <a className="underline" href="/admin/modules">Modules</a>
         <a className="underline" href="/admin/users">Users</a>
         <a className="underline" href="/request-deletion">Request Deletion (test)</a>
       </nav>

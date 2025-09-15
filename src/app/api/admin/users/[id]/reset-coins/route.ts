@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 
-// params is a Promise in Next.js 15 route handlers
 export async function POST(
   req: Request,
   ctx: { params: Promise<{ id: string }> }
@@ -16,12 +15,12 @@ export async function POST(
 
     const updated = await prisma.users.update({
       where: { id },
-      data: { is_active: !Boolean(user.is_active) },
+      data: { coins: 0 },
     })
 
     return NextResponse.json(updated)
   } catch (e) {
-    console.error('POST /api/admin/users/[id] failed:', e)
+    console.error('reset-coins failed:', e)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

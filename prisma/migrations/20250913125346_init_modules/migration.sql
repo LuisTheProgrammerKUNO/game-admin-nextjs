@@ -1,12 +1,3 @@
-/*
-  Warnings:
-
-  - You are about to drop the `answers` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `modules` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `questions` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `user` table. If the table is not empty, all the data it contains will be lost.
-
-*/
 -- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "modules_schema";
 
@@ -16,34 +7,14 @@ CREATE SCHEMA IF NOT EXISTS "neon_auth";
 -- CreateEnum
 CREATE TYPE "modules_schema"."QuestionType" AS ENUM ('mul_choice', 'fill_blank', 'identification');
 
--- DropForeignKey
-ALTER TABLE "public"."answers" DROP CONSTRAINT "answers_question_id_fkey";
-
--- DropForeignKey
-ALTER TABLE "public"."questions" DROP CONSTRAINT "questions_module_id_fkey";
-
--- DropTable
-DROP TABLE "public"."answers";
-
--- DropTable
-DROP TABLE "public"."modules";
-
--- DropTable
-DROP TABLE "public"."questions";
-
--- DropTable
-DROP TABLE "public"."user";
-
--- DropEnum
-DROP TYPE "public"."QuestionType";
-
 -- CreateTable
 CREATE TABLE "neon_auth"."users_sync" (
     "raw_json" JSONB NOT NULL,
-    "id" TEXT NOT NULL DEFAULT (raw_json ->> 'id'::text),
-    "name" TEXT DEFAULT (raw_json ->> 'display_name'::text),
-    "email" TEXT DEFAULT (raw_json ->> 'primary_email'::text),
-    "created_at" TIMESTAMPTZ(6) DEFAULT to_timestamp((trunc((((raw_json ->> 'signed_up_at_millis'::text))::bigint)::double precision) / 1000::double precision)),
+    "id" TEXT NOT NULL,
+    "name" TEXT,
+    "email" TEXT,
+    "created_at" TIMESTAMPTZ(6),
+    "updated_at" TIMESTAMPTZ(6),
     "deleted_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "users_sync_pkey" PRIMARY KEY ("id")
@@ -125,10 +96,10 @@ CREATE UNIQUE INDEX "users_stripe_customer_id_key" ON "public"."users"("stripe_c
 CREATE UNIQUE INDEX "transactions_stripe_payment_id_key" ON "public"."transactions"("stripe_payment_id");
 
 -- AddForeignKey
-ALTER TABLE "public"."users" ADD CONSTRAINT "users_id_fkey" FOREIGN KEY ("id") REFERENCES "neon_auth"."users_sync"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE "neon_auth"."users_sync" ADD CONSTRAINT "users_sync_id_fkey" FOREIGN KEY ("id") REFERENCES "public"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."transactions" ADD CONSTRAINT "transactions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE "public"."transactions" ADD CONSTRAINT "transactions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "modules_schema"."questions" ADD CONSTRAINT "questions_module_id_fkey" FOREIGN KEY ("module_id") REFERENCES "modules_schema"."modules"("module_id") ON DELETE CASCADE ON UPDATE CASCADE;

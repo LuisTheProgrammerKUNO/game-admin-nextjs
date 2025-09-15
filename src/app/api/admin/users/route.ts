@@ -3,40 +3,30 @@ import prisma from '@lib/prisma'
 
 export async function GET() {
   try {
+    // Base info from public.users
     const users = await prisma.users.findMany({
-      select: {
-        id: true,
-        first_name: true,
-        last_name: true,
-        middle_name: true,
-        school: true,
-        birthday: true,
-        location: true,
-        is_active: true,
-        deletion_req: true,
-        stripe_customer_id: true,
-        coins: true,
-        users_sync: {
-          select: {
-            email: true,
-            created_at: true, // signup date from sync
-          },
-        },
-      },
+      orderBy: { first_name: 'asc' },
     })
 
-    const mapped = users.map((u) => ({
+    if (users.length === 0) return NextResponse.json([])
+
+    // Enrich with email + created_at from neon_auth.users_sync
+    const ids = users.map(u => u.id)
+    const mirrors = await prisma.users_sync.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, email: true, created_at: true },
+    })
+    const mirrorMap = new Map(mirrors.map(m => [m.id, m]))
+
+    const merged = users.map(u => ({
       ...u,
-      email: u.users_sync?.email ?? null,
-      created_at: u.users_sync?.created_at ?? null,
+      email: mirrorMap.get(u.id)?.email ?? null,
+      created_at: mirrorMap.get(u.id)?.created_at ?? null,
     }))
 
-    return NextResponse.json(mapped)
-  } catch (err: any) {
-    console.error('Error fetching users:', err)
-    return NextResponse.json(
-      { error: 'Failed to fetch users' },
-      { status: 500 }
-    )
+    return NextResponse.json(merged)
+  } catch (e) {
+    console.error('GET /api/admin/users failed:', e)
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
