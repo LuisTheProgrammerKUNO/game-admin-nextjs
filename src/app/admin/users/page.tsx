@@ -27,10 +27,12 @@ export default function UserManagementPage() {
     try {
       let endpoint = ''
 
-      if (action === 'declineDeletion') {
+      if (action === 'approveDeletion') {
+        endpoint = `/api/admin/users/${id}/approve-deletion`
+      } else if (action === 'declineDeletion') {
         endpoint = `/api/admin/users/${id}/decline-deletion`
       } else if (action === 'toggleActive') {
-        endpoint = `/api/admin/users/${id}/toggle-active`
+        endpoint = `/api/admin/users/${id}`
       } else if (action === 'resetCoins') {
         endpoint = `/api/admin/users/${id}/reset-coins`
       }
@@ -54,7 +56,7 @@ export default function UserManagementPage() {
       <table className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg overflow-hidden">
         <thead>
           <tr className="bg-gray-900 text-gray-200 text-center">
-            <th className="p-2 border border-gray-700">ID</th>
+            {/* Removed ID header */}
             <th className="p-2 border border-gray-700">Name</th>
             <th className="p-2 border border-gray-700">Email</th>
             <th className="p-2 border border-gray-700">Signup Date</th>
@@ -67,7 +69,7 @@ export default function UserManagementPage() {
         <tbody>
           {users.map((u) => (
             <tr key={u.id} className="text-center hover:bg-gray-700">
-              <td className="p-2 border border-gray-700">{u.id}</td>
+              {/* Removed ID cell */}
               <td className="p-2 border border-gray-700">
                 {u.first_name} {u.last_name}
               </td>
@@ -99,14 +101,12 @@ export default function UserManagementPage() {
                   </button>
                 )}
 
-                {u.coins > 0 && (
-                  <button
-                    className="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded"
-                    onClick={() => handleAction(u.id, 'resetCoins')}
-                  >
-                    Reset Coins
-                  </button>
-                )}
+                <button
+                  className="px-2 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded"
+                  onClick={() => handleAction(u.id, 'resetCoins')}
+                >
+                  Reset Coins
+                </button>
               </td>
             </tr>
           ))}
