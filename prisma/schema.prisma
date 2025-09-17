@@ -24,7 +24,7 @@ model users_sync {
   // Relation to public.users
   user users? @relation(fields: [id], references: [id], onDelete: Cascade)
 
-  @@ignore
+  
   @@index([deleted_at])
   @@schema("neon_auth")
 }
